@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cva-enduro
+resources:
+  - mysql.yaml
+  - namespace.yaml
+  - cva-enduro-worker.yaml
+  - role.yaml
+  - role-binding.yaml
+  - service-account.yaml
+  - temporal-ui.yaml
+  - temporal.yaml
