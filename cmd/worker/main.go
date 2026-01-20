@@ -34,7 +34,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	var cfg config.Configuration
+	var cfg config.Config
 	configFile, _ := p.GetString("config")
 	configFileFound, configFileUsed, err := config.Read(&cfg, configFile)
 	if err != nil {
@@ -84,4 +84,6 @@ func main() {
 		logger.Error(err, "Failed to close the application.")
 		os.Exit(1)
 	}
+
+	println("Goodbye!")
 }

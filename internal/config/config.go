@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"go.artefactual.dev/tools/bucket"
 )
 
-type ConfigurationValidator interface {
+type ConfigValidator interface {
 	Validate() error
 }
 
-type Configuration struct {
+type Config struct {
 	// Debug toggles human readable logs or JSON logs (default).
 	Debug bool
 
@@ -22,12 +23,14 @@ type Configuration struct {
 	// number of messages logged.
 	Verbosity int
 
-	// SharedPath is a file path that both cva-enduro-workflows and Enduro can
-	// access (required).
-	SharedPath string
+	// ReportsBucket contains the reports bucket configuration.
+	ReportsBucket *bucket.Config
 
+	// Temporal configures the Temporal server address and workflow information.
 	Temporal Temporal
-	Worker   WorkerConfig
+
+	// Worker configures the Temporal worker.
+	Worker WorkerConfig
 }
 
 type Temporal struct {
@@ -51,12 +54,12 @@ type WorkerConfig struct {
 	MaxConcurrentSessions int
 }
 
-func (c Configuration) Validate() error {
+func (c Config) Validate() error {
 	var errs error
 
 	// Verify that the required fields have values.
-	if c.SharedPath == "" {
-		errs = errors.Join(errs, errRequired("SharedPath"))
+	if c.ReportsBucket == nil {
+		errs = errors.Join(errs, errRequired("ReportsBucket"))
 	}
 	if c.Temporal.TaskQueue == "" {
 		errs = errors.Join(errs, errRequired("Temporal.TaskQueue"))
@@ -76,7 +79,7 @@ func (c Configuration) Validate() error {
 	return errs
 }
 
-func Read(config *Configuration, configFile string) (found bool, configFileUsed string, err error) {
+func Read(config *Config, configFile string) (found bool, configFileUsed string, err error) {
 	v := viper.New()
 
 	v.AddConfigPath(".")
