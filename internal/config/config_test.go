@@ -3,6 +3,7 @@ package config_test
 import (
 	"testing"
 
+	"go.artefactual.dev/tools/bucket"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/fs"
 
@@ -12,7 +13,13 @@ import (
 const testConfig = `# Config
 debug = true
 verbosity = 2
-sharedPath = "/home/enduro/shared"
+[reportsBucket]
+endpoint = "http://minio.enduro-sdps:9000"
+pathStyle = true
+accessKey = "minio"
+secretKey = "minio123"
+region = "us-west-1"
+bucket = "reports"
 [temporal]
 address = "host:port"
 namespace = "default"
@@ -30,7 +37,7 @@ func TestConfig(t *testing.T) {
 		configFile      string
 		toml            string
 		wantFound       bool
-		wantCfg         config.Configuration
+		wantCfg         config.Config
 		wantErr         string
 		wantErrContains string
 	}
@@ -41,10 +48,17 @@ func TestConfig(t *testing.T) {
 			configFile: "cva-enduro.toml",
 			toml:       testConfig,
 			wantFound:  true,
-			wantCfg: config.Configuration{
-				Debug:      true,
-				Verbosity:  2,
-				SharedPath: "/home/enduro/shared",
+			wantCfg: config.Config{
+				Debug:     true,
+				Verbosity: 2,
+				ReportsBucket: &bucket.Config{
+					Endpoint:  "http://minio.enduro-sdps:9000",
+					PathStyle: true,
+					AccessKey: "minio",
+					SecretKey: "minio123",
+					Region:    "us-west-1",
+					Bucket:    "reports",
+				},
 				Temporal: config.Temporal{
 					Address:      "host:port",
 					Namespace:    "default",
@@ -61,7 +75,7 @@ func TestConfig(t *testing.T) {
 			configFile: "cva-enduro.toml",
 			wantFound:  true,
 			wantErr: `invalid configuration:
-SharedPath: missing required value
+ReportsBucket: missing required value
 Temporal.TaskQueue: missing required value
 Temporal.WorkflowName: missing required value`,
 		},
@@ -69,7 +83,8 @@ Temporal.WorkflowName: missing required value`,
 			name:       "Errors when MaxConcurrentSessions is less than 1",
 			configFile: "cva-enduro.toml",
 			toml: `# Config
-sharedPath = "/home/enduro/shared"
+[reportsBucket]
+url = "file:///home/enduro/reports"
 [temporal]
 taskQueue = "cva-enduro"
 workflowName = "cva-enduro"
@@ -110,7 +125,7 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 				configFile = tmpDir.Join(tc.configFile)
 			}
 
-			var c config.Configuration
+			var c config.Config
 			found, configFileUsed, err := config.Read(&c, configFile)
 			if tc.wantErr != "" {
 				assert.Equal(t, found, tc.wantFound)

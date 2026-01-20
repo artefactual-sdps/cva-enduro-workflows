@@ -28,7 +28,7 @@ ARG GROUP_ID=1000
 RUN addgroup -g ${GROUP_ID} -S enduro
 RUN adduser -u ${USER_ID} -S -D enduro enduro
 USER enduro
-RUN mkdir /home/enduro/shared
+RUN mkdir /home/enduro/reports
 
 FROM base AS enduro-worker
 COPY --from=build-worker --link /out/cva-enduro-worker /home/enduro/bin/cva-enduro-worker

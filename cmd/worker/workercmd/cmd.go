@@ -2,28 +2,35 @@ package workercmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	"go.artefactual.dev/tools/bucket"
 	"go.artefactual.dev/tools/temporal"
+	temporalsdk_activity "go.temporal.io/sdk/activity"
 	temporalsdk_client "go.temporal.io/sdk/client"
 	temporalsdk_interceptor "go.temporal.io/sdk/interceptor"
 	temporalsdk_worker "go.temporal.io/sdk/worker"
 	temporalsdk_workflow "go.temporal.io/sdk/workflow"
+	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/fileblob"
 
+	"github.com/artefactual-sdps/cva-enduro-workflows/internal/activities"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflow"
+	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflows"
 )
 
 const Name = "cva-enduro-worker"
 
 type Main struct {
 	logger         logr.Logger
-	cfg            config.Configuration
+	cfg            config.Config
+	reportsBucket  *blob.Bucket
 	temporalWorker temporalsdk_worker.Worker
 	temporalClient temporalsdk_client.Client
 }
 
-func NewMain(logger logr.Logger, cfg config.Configuration) *Main {
+func NewMain(logger logr.Logger, cfg config.Config) *Main {
 	return &Main{
 		logger: logger,
 		cfg:    cfg,
@@ -31,6 +38,13 @@ func NewMain(logger logr.Logger, cfg config.Configuration) *Main {
 }
 
 func (m *Main) Run(ctx context.Context) error {
+	b, err := bucket.NewWithConfig(ctx, m.cfg.ReportsBucket)
+	if err != nil {
+		m.logger.Error(err, "Failed to open reports bucket.")
+		return err
+	}
+	m.reportsBucket = b
+
 	c, err := temporalsdk_client.Dial(temporalsdk_client.Options{
 		HostPort:  m.cfg.Temporal.Address,
 		Namespace: m.cfg.Temporal.Namespace,
@@ -52,8 +66,13 @@ func (m *Main) Run(ctx context.Context) error {
 	m.temporalWorker = w
 
 	w.RegisterWorkflowWithOptions(
-		workflow.NewBatchPoststorageWorkflow(m.cfg.SharedPath).Execute,
+		workflows.NewBatchPoststorage(m.cfg).Execute,
 		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Temporal.WorkflowName},
+	)
+
+	w.RegisterActivityWithOptions(
+		activities.NewCreateCSV(m.reportsBucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
 
 	if err := w.Start(); err != nil {
@@ -71,6 +90,12 @@ func (m *Main) Close() error {
 
 	if m.temporalClient != nil {
 		m.temporalClient.Close()
+	}
+
+	if m.reportsBucket != nil {
+		if err := m.reportsBucket.Close(); err != nil {
+			return fmt.Errorf("close reports bucket: %w", err)
+		}
 	}
 
 	return nil
