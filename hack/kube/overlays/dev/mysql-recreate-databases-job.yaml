@@ -25,7 +25,7 @@ spec:
           command: [
               "sh",
               "-c",
-              'mysql -h mysql.cva-enduro -u root -p$MYSQL_ROOT_PASSWORD --execute "
+              'mysql -h mysql.enduro-sdps -u root -p$MYSQL_ROOT_PASSWORD --execute "
               DROP DATABASE IF EXISTS temporal;
               CREATE DATABASE IF NOT EXISTS temporal;
               GRANT ALL PRIVILEGES ON temporal.* TO ''$MYSQL_USER''@''%'';
