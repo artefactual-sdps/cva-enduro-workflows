@@ -13,13 +13,13 @@ import (
 const testConfig = `# Config
 debug = true
 verbosity = 2
-[reportsBucket]
+[ingestBucket]
 endpoint = "http://minio.enduro-sdps:9000"
 pathStyle = true
 accessKey = "minio"
 secretKey = "minio123"
 region = "us-west-1"
-bucket = "reports"
+bucket = "enduro-ingest"
 [temporal]
 address = "host:port"
 namespace = "default"
@@ -51,13 +51,13 @@ func TestConfig(t *testing.T) {
 			wantCfg: config.Config{
 				Debug:     true,
 				Verbosity: 2,
-				ReportsBucket: &bucket.Config{
+				IngestBucket: &bucket.Config{
 					Endpoint:  "http://minio.enduro-sdps:9000",
 					PathStyle: true,
 					AccessKey: "minio",
 					SecretKey: "minio123",
 					Region:    "us-west-1",
-					Bucket:    "reports",
+					Bucket:    "enduro-ingest",
 				},
 				Temporal: config.Temporal{
 					Address:      "host:port",
@@ -75,7 +75,7 @@ func TestConfig(t *testing.T) {
 			configFile: "cva-enduro.toml",
 			wantFound:  true,
 			wantErr: `invalid configuration:
-ReportsBucket: missing required value
+IngestBucket: missing required value
 Temporal.TaskQueue: missing required value
 Temporal.WorkflowName: missing required value`,
 		},
@@ -83,7 +83,7 @@ Temporal.WorkflowName: missing required value`,
 			name:       "Errors when MaxConcurrentSessions is less than 1",
 			configFile: "cva-enduro.toml",
 			toml: `# Config
-[reportsBucket]
+[ingestBucket]
 url = "file:///home/enduro/reports"
 [temporal]
 taskQueue = "cva-enduro"

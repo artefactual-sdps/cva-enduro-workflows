@@ -25,7 +25,7 @@ const Name = "cva-enduro-worker"
 type Main struct {
 	logger         logr.Logger
 	cfg            config.Config
-	reportsBucket  *blob.Bucket
+	ingestBucket   *blob.Bucket
 	temporalWorker temporalsdk_worker.Worker
 	temporalClient temporalsdk_client.Client
 }
@@ -38,12 +38,12 @@ func NewMain(logger logr.Logger, cfg config.Config) *Main {
 }
 
 func (m *Main) Run(ctx context.Context) error {
-	b, err := bucket.NewWithConfig(ctx, m.cfg.ReportsBucket)
+	b, err := bucket.NewWithConfig(ctx, m.cfg.IngestBucket)
 	if err != nil {
-		m.logger.Error(err, "Failed to open reports bucket.")
+		m.logger.Error(err, "Failed to open ingest bucket.")
 		return err
 	}
-	m.reportsBucket = b
+	m.ingestBucket = b
 
 	c, err := temporalsdk_client.Dial(temporalsdk_client.Options{
 		HostPort:  m.cfg.Temporal.Address,
@@ -71,7 +71,7 @@ func (m *Main) Run(ctx context.Context) error {
 	)
 
 	w.RegisterActivityWithOptions(
-		activities.NewCreateCSV(m.reportsBucket).Execute,
+		activities.NewCreateCSV(m.ingestBucket).Execute,
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
 
@@ -92,9 +92,9 @@ func (m *Main) Close() error {
 		m.temporalClient.Close()
 	}
 
-	if m.reportsBucket != nil {
-		if err := m.reportsBucket.Close(); err != nil {
-			return fmt.Errorf("close reports bucket: %w", err)
+	if m.ingestBucket != nil {
+		if err := m.ingestBucket.Close(); err != nil {
+			return fmt.Errorf("close ingest bucket: %w", err)
 		}
 	}
 

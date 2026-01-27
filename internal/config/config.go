@@ -23,8 +23,8 @@ type Config struct {
 	// number of messages logged.
 	Verbosity int
 
-	// ReportsBucket contains the reports bucket configuration.
-	ReportsBucket *bucket.Config
+	// IngestBucket configuration.
+	IngestBucket *bucket.Config
 
 	// Temporal configures the Temporal server address and workflow information.
 	Temporal Temporal
@@ -58,8 +58,8 @@ func (c Config) Validate() error {
 	var errs error
 
 	// Verify that the required fields have values.
-	if c.ReportsBucket == nil {
-		errs = errors.Join(errs, errRequired("ReportsBucket"))
+	if c.IngestBucket == nil {
+		errs = errors.Join(errs, errRequired("IngestBucket"))
 	}
 	if c.Temporal.TaskQueue == "" {
 		errs = errors.Join(errs, errRequired("Temporal.TaskQueue"))

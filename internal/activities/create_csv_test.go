@@ -46,7 +46,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 					},
 				},
 			},
-			expectedKey: "batch_33333333-3333-3333-3333-333333333333.csv",
+			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
 			want: `title,alternativeIdentifiers,alternativeIdentifierLabels,radGeneralMaterialDesignation,levelOfDescription,culture,publicationStatus,accessRestriction
 Test SIP 1,11111111-2222-3333-4444-555555555555,AIP UUID,Multiple media,File,en,draft,This file has not been reviewed for potential FOIPPA restrictions. Access is pending review and may be delayed. See archivist for details.
 Test SIP 2,22222222-3333-4444-5555-666666666666,AIP UUID,Multiple media,File,en,draft,This file has not been reviewed for potential FOIPPA restrictions. Access is pending review and may be delayed. See archivist for details.
@@ -86,7 +86,7 @@ Test SIP 2,22222222-3333-4444-5555-666666666666,AIP UUID,Multiple media,File,en,
 					},
 				},
 			},
-			expectedKey: "batch_33333333-3333-3333-3333-333333333333.csv",
+			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
 			want: `title,alternativeIdentifiers,alternativeIdentifierLabels,radGeneralMaterialDesignation,levelOfDescription,culture,publicationStatus,accessRestriction
 `,
 		},
