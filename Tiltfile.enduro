@@ -1,4 +1,4 @@
-version_settings(constraint=">=0.22.2")
+version_settings(constraint=">=0.35.0")
 secret_settings(disable_scrub=True)
 load("ext://uibutton", "cmd_button", "text_input")
 load("ext://dotenv", "dotenv")
@@ -27,6 +27,6 @@ k8s_yaml(kustomize("hack/kube/overlays/enduro"))
 # CVA Enduro resources
 k8s_resource(
   "cva-enduro-worker",
-  labels=["CVA Enduro"],
+  labels=["CVA-Enduro"],
   trigger_mode=trigger_mode
 )

@@ -41,7 +41,7 @@ func TestBatchPoststorage(t *testing.T) {
 func (s *BatchPoststorageTestSuite) SetupWorkflowTest(cfg config.Config) {
 	s.env = s.NewTestWorkflowEnvironment()
 
-	b, err := bucket.NewWithConfig(s.T().Context(), cfg.ReportsBucket)
+	b, err := bucket.NewWithConfig(s.T().Context(), cfg.IngestBucket)
 	s.Require().NoError(err)
 	s.bucket = b
 
@@ -69,7 +69,7 @@ func (s *BatchPoststorageTestSuite) TestHappyPath() {
 	}
 
 	s.SetupWorkflowTest(config.Config{
-		ReportsBucket: &bucket.Config{URL: "mem://"},
+		IngestBucket: &bucket.Config{URL: "mem://"},
 	})
 
 	s.env.OnActivity(

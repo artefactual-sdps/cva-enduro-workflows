@@ -41,8 +41,11 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 	if len(params.SIPs) == 0 {
 		return nil, fmt.Errorf("create CSV: no SIPs provided")
 	}
+	if params.Batch == nil {
+		return nil, fmt.Errorf("create CSV: missing batch")
+	}
 
-	key := fmt.Sprintf("batch_%s.csv", params.Batch.UUID)
+	key := fmt.Sprintf("reports/batch_%s.csv", params.Batch.UUID)
 
 	bw, err := a.bucket.NewWriter(ctx, key, nil)
 	if err != nil {
