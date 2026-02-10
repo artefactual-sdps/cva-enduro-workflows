@@ -1,6 +1,6 @@
 module github.com/artefactual-sdps/cva-enduro-workflows
 
-go 1.24.12
+go 1.24.13
 
 require (
 	github.com/go-logr/logr v1.4.3
