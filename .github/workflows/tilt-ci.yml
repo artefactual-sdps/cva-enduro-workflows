@@ -14,10 +14,11 @@ jobs:
         uses: AbsaOSS/k3d-action@v2.4.0
         with:
           cluster-name: cva-enduro-ci
+          k3d-version: v5.8.3
           args: >-
             --registry-create cva-enduro-ci-registry
             --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+            --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
       - name: Install Tilt
         uses: yokawasa/action-setup-kube-tools@v0.13.1
         with:
