@@ -13,7 +13,7 @@ import (
 const (
 	CreateCSVName string = "create-csv-activity"
 
-	accessRestriction string = "This file has not been reviewed for potential FOIPPA restrictions. Access is pending review and may be delayed. See archivist for details."
+	accessConditions string = "This file has not been reviewed for potential FOIPPA restrictions. Access is pending review and may be delayed. See archivist for details."
 )
 
 // CreateCSV is an activity that creates an AtoM CSV file for the given SIPs.
@@ -64,7 +64,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 		"levelOfDescription",
 		"culture",
 		"publicationStatus",
-		"accessRestriction",
+		"accessConditions",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create CSV: write header: %w", err)
@@ -86,7 +86,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 			"File",             // levelOfDescription
 			"en",               // culture
 			"draft",            // publicationStatus
-			accessRestriction,  // accessRestriction
+			accessConditions,   // accessConditions
 		})
 		if err != nil {
 			return nil, fmt.Errorf("create CSV: write row %d: %w", i+1, err)
