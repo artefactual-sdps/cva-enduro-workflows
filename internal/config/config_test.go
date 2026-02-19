@@ -3,6 +3,7 @@ package config_test
 import (
 	"testing"
 
+	"github.com/artefactual-sdps/temporal-activities/bagcreate"
 	"go.artefactual.dev/tools/bucket"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/fs"
@@ -21,12 +22,18 @@ secretKey = "minio123"
 region = "us-west-1"
 bucket = "enduro-ingest"
 [temporal]
-address = "host:port"
+address = "temporal.enduro-sdps:7233"
 namespace = "default"
-taskQueue = "cva-enduro"
-workflowName = "cva-enduro"
 [worker]
 maxConcurrentSessions = 1
+taskQueue = "cva-enduro"
+[preprocessing]
+workflowName = "preprocessing"
+sharedPath = "/home/enduro/shared"
+[preprocessing.bagCreate]
+checksumAlgorithm = "sha256"
+[postbatch]
+workflowName = "postbatch"
 `
 
 func TestConfig(t *testing.T) {
@@ -51,6 +58,22 @@ func TestConfig(t *testing.T) {
 			wantCfg: config.Config{
 				Debug:     true,
 				Verbosity: 2,
+				Temporal: config.TemporalConfig{
+					Address:   "temporal.enduro-sdps:7233",
+					Namespace: "default",
+				},
+				Worker: config.WorkerConfig{
+					MaxConcurrentSessions: 1,
+					TaskQueue:             "cva-enduro",
+				},
+				Preprocessing: config.PreprocessingConfig{
+					WorkflowName: "preprocessing",
+					SharedPath:   "/home/enduro/shared",
+					BagCreate: bagcreate.Config{
+						ChecksumAlgorithm: "sha256",
+					},
+				},
+				Postbatch: config.PostbatchConfig{WorkflowName: "postbatch"},
 				IngestBucket: &bucket.Config{
 					Endpoint:  "http://minio.enduro-sdps:9000",
 					PathStyle: true,
@@ -59,25 +82,23 @@ func TestConfig(t *testing.T) {
 					Region:    "us-west-1",
 					Bucket:    "enduro-ingest",
 				},
-				Temporal: config.Temporal{
-					Address:      "host:port",
-					Namespace:    "default",
-					TaskQueue:    "cva-enduro",
-					WorkflowName: "cva-enduro",
-				},
-				Worker: config.WorkerConfig{
-					MaxConcurrentSessions: 1,
-				},
 			},
 		},
 		{
 			name:       "Errors when configuration values are not valid",
 			configFile: "cva-enduro.toml",
-			wantFound:  true,
+			toml: `# override default values to trigger validation errors
+[temporal]
+namespace = ""
+`,
+			wantFound: true,
 			wantErr: `invalid configuration:
-IngestBucket: missing required value
-Temporal.TaskQueue: missing required value
-Temporal.WorkflowName: missing required value`,
+Temporal.Address: missing required value
+Temporal.Namespace: missing required value
+Worker.TaskQueue: missing required value
+Preprocessing.WorkflowName: missing required value
+Preprocessing.SharedPath: missing required value
+Postbatch.WorkflowName: missing required value`,
 		},
 		{
 			name:       "Errors when MaxConcurrentSessions is less than 1",
@@ -86,10 +107,18 @@ Temporal.WorkflowName: missing required value`,
 [ingestBucket]
 url = "file:///home/enduro/reports"
 [temporal]
-taskQueue = "cva-enduro"
-workflowName = "cva-enduro"
+address = "temporal.enduro-sdps:7233"
+namespace = "default"
 [worker]
 maxConcurrentSessions = -1
+taskQueue = "cva-enduro"
+[preprocessing]
+workflowName = "preprocessing"
+sharedPath = "/home/enduro/shared"
+[preprocessing.bagCreate]
+checksumAlgorithm = "sha256"
+[postbatch]
+workflowName = "postbatch"
 `,
 			wantFound: true,
 			wantErr: `invalid configuration:
@@ -114,7 +143,6 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 			wantErrContains: "configuration file not found: ",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

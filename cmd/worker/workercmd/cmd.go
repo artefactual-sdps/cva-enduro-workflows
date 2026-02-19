@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artefactual-sdps/temporal-activities/bagcreate"
+	"github.com/artefactual-sdps/temporal-activities/bucketupload"
 	"github.com/go-logr/logr"
 	"go.artefactual.dev/tools/bucket"
 	"go.artefactual.dev/tools/temporal"
@@ -38,13 +40,6 @@ func NewMain(logger logr.Logger, cfg config.Config) *Main {
 }
 
 func (m *Main) Run(ctx context.Context) error {
-	b, err := bucket.NewWithConfig(ctx, m.cfg.IngestBucket)
-	if err != nil {
-		m.logger.Error(err, "Failed to open ingest bucket.")
-		return err
-	}
-	m.ingestBucket = b
-
 	c, err := temporalsdk_client.Dial(temporalsdk_client.Options{
 		HostPort:  m.cfg.Temporal.Address,
 		Namespace: m.cfg.Temporal.Namespace,
@@ -56,7 +51,7 @@ func (m *Main) Run(ctx context.Context) error {
 	}
 	m.temporalClient = c
 
-	w := temporalsdk_worker.New(m.temporalClient, m.cfg.Temporal.TaskQueue, temporalsdk_worker.Options{
+	w := temporalsdk_worker.New(m.temporalClient, m.cfg.Worker.TaskQueue, temporalsdk_worker.Options{
 		EnableSessionWorker:               true,
 		MaxConcurrentSessionExecutionSize: m.cfg.Worker.MaxConcurrentSessions,
 		Interceptors: []temporalsdk_interceptor.WorkerInterceptor{
@@ -65,18 +60,18 @@ func (m *Main) Run(ctx context.Context) error {
 	})
 	m.temporalWorker = w
 
-	w.RegisterWorkflowWithOptions(
-		workflows.NewPostbatch(m.cfg).Execute,
-		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Temporal.WorkflowName},
-	)
+	b, err := bucket.NewWithConfig(ctx, m.cfg.IngestBucket)
+	if err != nil {
+		m.logger.Error(err, "Failed to open ingest bucket.")
+		return err
+	}
+	m.ingestBucket = b
 
-	w.RegisterActivityWithOptions(
-		activities.NewCreateCSV(m.ingestBucket).Execute,
-		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
-	)
+	m.registerPreprocessingWorkflow()
+	m.registerPostbatchWorkflow()
 
 	if err := w.Start(); err != nil {
-		m.logger.Error(err, "Worker failed to start or fatal error during its execution.")
+		m.logger.Error(err, "Worker failed to start.")
 		return err
 	}
 
@@ -99,4 +94,33 @@ func (m *Main) Close() error {
 	}
 
 	return nil
+}
+
+func (m *Main) registerPreprocessingWorkflow() {
+	m.temporalWorker.RegisterWorkflowWithOptions(
+		workflows.NewPreprocessing(m.cfg).Execute,
+		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Preprocessing.WorkflowName},
+	)
+
+	m.temporalWorker.RegisterActivityWithOptions(
+		bucketupload.New(m.ingestBucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bucketupload.Name},
+	)
+
+	m.temporalWorker.RegisterActivityWithOptions(
+		bagcreate.New(m.cfg.Preprocessing.BagCreate).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bagcreate.Name},
+	)
+}
+
+func (m *Main) registerPostbatchWorkflow() {
+	m.temporalWorker.RegisterWorkflowWithOptions(
+		workflows.NewPostbatch(m.cfg).Execute,
+		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Postbatch.WorkflowName},
+	)
+
+	m.temporalWorker.RegisterActivityWithOptions(
+		activities.NewCreateCSV(m.ingestBucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
+	)
 }
