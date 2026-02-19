@@ -6,13 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artefactual-sdps/temporal-activities/bagcreate"
 	"github.com/spf13/viper"
 	"go.artefactual.dev/tools/bucket"
 )
-
-type ConfigValidator interface {
-	Validate() error
-}
 
 type Config struct {
 	// Debug toggles human readable logs or JSON logs (default).
@@ -23,60 +20,119 @@ type Config struct {
 	// number of messages logged.
 	Verbosity int
 
-	// IngestBucket configuration.
-	IngestBucket *bucket.Config
-
-	// Temporal configures the Temporal server address and workflow information.
-	Temporal Temporal
+	// Temporal configures the Temporal client.
+	Temporal TemporalConfig
 
 	// Worker configures the Temporal worker.
 	Worker WorkerConfig
+
+	// Preprocessing configures the preprocessing workflow.
+	Preprocessing PreprocessingConfig
+
+	// Postbatch configures the postbatch workflow.
+	Postbatch PostbatchConfig
+
+	// IngestBucket configuration.
+	IngestBucket *bucket.Config
 }
 
-type Temporal struct {
-	// Address is the Temporal server host and port (default: "localhost:7233").
+func (c Config) Validate() error {
+	return errors.Join(
+		c.Temporal.Validate(),
+		c.Worker.Validate(),
+		c.Preprocessing.Validate(),
+		c.Postbatch.Validate(),
+	)
+}
+
+type TemporalConfig struct {
+	// Address is the Temporal server host and port (required).
 	Address string
 
-	// Namespace is the Temporal namespace of the worker (default: "default").
+	// Namespace is the Temporal client namespace (default: "default").
 	Namespace string
+}
 
-	// TaskQueue is the Temporal task queue from which the worker will pull
-	// tasks (required).
-	TaskQueue string
+func (c TemporalConfig) Validate() error {
+	var errs error
 
-	// WorkflowName is the Temporal workflow name (required).
-	WorkflowName string
+	if c.Address == "" {
+		errs = errors.Join(errs, errRequired("Temporal.Address"))
+	}
+	if c.Namespace == "" {
+		errs = errors.Join(errs, errRequired("Temporal.Namespace"))
+	}
+
+	return errs
 }
 
 type WorkerConfig struct {
 	// MaxConcurrentSessions limits the number of workflow sessions the worker
 	// can handle simultaneously (default: 1).
 	MaxConcurrentSessions int
+
+	// TaskQueue is the Temporal task queue from which the worker will pull
+	// tasks (default: "cva-enduro").
+	TaskQueue string
 }
 
-func (c Config) Validate() error {
+func (c WorkerConfig) Validate() error {
 	var errs error
 
-	// Verify that the required fields have values.
-	if c.IngestBucket == nil {
-		errs = errors.Join(errs, errRequired("IngestBucket"))
-	}
-	if c.Temporal.TaskQueue == "" {
-		errs = errors.Join(errs, errRequired("Temporal.TaskQueue"))
-	}
-	if c.Temporal.WorkflowName == "" {
-		errs = errors.Join(errs, errRequired("Temporal.WorkflowName"))
+	if c.TaskQueue == "" {
+		errs = errors.Join(errs, errRequired("Worker.TaskQueue"))
 	}
 
 	// Verify that MaxConcurrentSessions is >= 1.
-	if c.Worker.MaxConcurrentSessions < 1 {
+	if c.MaxConcurrentSessions < 1 {
 		errs = errors.Join(errs, fmt.Errorf(
 			"Worker.MaxConcurrentSessions: %d is less than the minimum value (1)",
-			c.Worker.MaxConcurrentSessions,
+			c.MaxConcurrentSessions,
 		))
 	}
 
 	return errs
+}
+
+type PreprocessingConfig struct {
+	// WorkflowName is the preprocessing Temporal workflow name (required).
+	WorkflowName string
+
+	// BagCreate configures the bagcreate activity used in the preprocessing
+	// workflow.
+	BagCreate bagcreate.Config
+
+	// SharedPath is the shared directory where Enduro puts SIPs for
+	// preprocessing (required).
+	SharedPath string
+}
+
+func (c PreprocessingConfig) Validate() error {
+	var errs error
+
+	if c.WorkflowName == "" {
+		errs = errors.Join(errs, errRequired("Preprocessing.WorkflowName"))
+	}
+	if c.SharedPath == "" {
+		errs = errors.Join(errs, errRequired("Preprocessing.SharedPath"))
+	}
+
+	errs = errors.Join(errs, c.BagCreate.Validate())
+
+	return errs
+}
+
+type PostbatchConfig struct {
+	// WorkflowName is the postbatch Temporal workflow name (required).
+	WorkflowName string
+}
+
+func (c PostbatchConfig) Validate() error {
+	if c.WorkflowName == "" {
+		return errRequired("Postbatch.WorkflowName")
+	}
+
+	return nil
 }
 
 func Read(config *Config, configFile string) (found bool, configFileUsed string, err error) {
@@ -91,7 +147,9 @@ func Read(config *Config, configFile string) (found bool, configFileUsed string,
 	v.AutomaticEnv()
 
 	// Defaults.
+	v.SetDefault("Temporal.Namespace", "default")
 	v.SetDefault("Worker.MaxConcurrentSessions", 1)
+	v.SetDefault("Preprocessing.BagCreate.ChecksumAlgorithm", "sha512")
 
 	if configFile != "" {
 		// Viper will not return a viper.ConfigFileNotFoundError error when

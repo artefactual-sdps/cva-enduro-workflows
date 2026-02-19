@@ -33,4 +33,4 @@ spec:
             secretName: cva-enduro-secret
         - name: shared-dir
           persistentVolumeClaim:
-            claimName: cva-enduro-pvc
+            claimName: preprocessing-pvc
