@@ -21,34 +21,34 @@ const (
 )
 
 type (
-	BatchPoststorage struct {
+	Postbatch struct {
 		cfg config.Config
 	}
-	BatchPoststorageRequest struct {
+	PostbatchRequest struct {
 		Batch *types.Batch
 		SIPs  []*types.SIP
 	}
-	BatchPoststorageResult struct {
+	PostbatchResult struct {
 		Outcome      Outcome
 		RelativePath string
 	}
 )
 
-func NewBatchPoststorage(cfg config.Config) *BatchPoststorage {
-	return &BatchPoststorage{cfg: cfg}
+func NewPostbatch(cfg config.Config) *Postbatch {
+	return &Postbatch{cfg: cfg}
 }
 
-func (w *BatchPoststorage) Execute(
+func (w *Postbatch) Execute(
 	ctx temporalsdk_workflow.Context,
-	params *BatchPoststorageRequest,
-) (*BatchPoststorageResult, error) {
+	params *PostbatchRequest,
+) (*PostbatchResult, error) {
 	var (
-		result BatchPoststorageResult
+		result PostbatchResult
 		err    error
 	)
 
 	logger := temporalsdk_workflow.GetLogger(ctx)
-	logger.Debug("Batch post-storage workflow running!", "params", params)
+	logger.Debug("Postbatch workflow running!", "params", params)
 
 	// Create an AtoM CSV file for all the SIPs in the batch.
 	fsCtx := withFilesysOpts(ctx, 10*time.Minute)

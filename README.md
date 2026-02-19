@@ -27,7 +27,7 @@ The child workers need to share the filesystem with Enduro's a3m or
 Archivematica workers. The workers must be connected to the same Temporal server
 and related to each other with the namespace, task queue and workflow name.
 
-### Batch post-storage worker
+### Postbatch worker
 
 The required configuration for the cva-enduro-workflows worker:
 
@@ -40,7 +40,7 @@ sharedPath = "/home/enduro/shared"
 address = "temporal.enduro-sdps:7233"
 namespace = "default"
 taskQueue = "cva-enduro"
-workflowName = "cva-enduro"
+workflowName = "batch-csv"
 
 [worker]
 maxConcurrentSessions = 1
@@ -48,13 +48,14 @@ maxConcurrentSessions = 1
 
 ### Enduro
 
-The batch poststorage section for Enduro's configuration:
+An example postbatch child workflow section for Enduro's configuration:
 
 ```toml
-[batch.poststorage]
+[[childWorkflows]]
+type = "postbatch"
 namespace = "default"
 taskQueue = "cva-enduro"
-workflowName = "cva-enduro"
+workflowName = "batch-csv"
 ```
 
 ## Local environment

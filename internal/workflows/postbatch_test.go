@@ -20,7 +20,7 @@ import (
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflows"
 )
 
-type BatchPoststorageTestSuite struct {
+type PostbatchTestSuite struct {
 	suite.Suite
 	temporalsdk_testsuite.WorkflowTestSuite
 
@@ -28,17 +28,17 @@ type BatchPoststorageTestSuite struct {
 
 	// Each test registers the workflow with a different name to avoid
 	// duplicates.
-	workflow *workflows.BatchPoststorage
+	workflow *workflows.Postbatch
 
 	// bucket is a blobs.Bucket used for reports in tests.
 	bucket *blob.Bucket
 }
 
-func TestBatchPoststorage(t *testing.T) {
-	suite.Run(t, new(BatchPoststorageTestSuite))
+func TestPostbatch(t *testing.T) {
+	suite.Run(t, new(PostbatchTestSuite))
 }
 
-func (s *BatchPoststorageTestSuite) SetupWorkflowTest(cfg config.Config) {
+func (s *PostbatchTestSuite) SetupWorkflowTest(cfg config.Config) {
 	s.env = s.NewTestWorkflowEnvironment()
 
 	b, err := bucket.NewWithConfig(s.T().Context(), cfg.IngestBucket)
@@ -50,14 +50,14 @@ func (s *BatchPoststorageTestSuite) SetupWorkflowTest(cfg config.Config) {
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
 
-	s.workflow = workflows.NewBatchPoststorage(cfg)
+	s.workflow = workflows.NewPostbatch(cfg)
 }
 
-func (s *BatchPoststorageTestSuite) TearDownTest() {
+func (s *PostbatchTestSuite) TearDownTest() {
 	s.bucket.Close()
 }
 
-func (s *BatchPoststorageTestSuite) TestHappyPath() {
+func (s *PostbatchTestSuite) TestHappyPath() {
 	batch := &types.Batch{
 		UUID:      uuid.MustParse("8fdfaea1-06ed-4cf6-8bdf-d15d80420f35"),
 		SIPSCount: 1,
@@ -86,14 +86,14 @@ func (s *BatchPoststorageTestSuite) TestHappyPath() {
 		nil,
 	)
 
-	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.BatchPoststorageRequest{
+	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PostbatchRequest{
 		Batch: batch,
 		SIPs:  []*types.SIP{sip},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 
-	var result workflows.BatchPoststorageResult
+	var result workflows.PostbatchResult
 	s.NoError(s.env.GetWorkflowResult(&result))
 	s.Equal(workflows.OutcomeSuccess, result.Outcome)
 	s.Equal("batch_8fdfaea1-06ed-4cf6-8bdf-d15d80420f35.csv", result.RelativePath)
