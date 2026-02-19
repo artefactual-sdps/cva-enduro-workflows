@@ -66,7 +66,7 @@ func (m *Main) Run(ctx context.Context) error {
 	m.temporalWorker = w
 
 	w.RegisterWorkflowWithOptions(
-		workflows.NewBatchPoststorage(m.cfg).Execute,
+		workflows.NewPostbatch(m.cfg).Execute,
 		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Temporal.WorkflowName},
 	)
 
