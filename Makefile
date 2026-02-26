@@ -41,7 +41,9 @@ define NEWLINE
 endef
 
 IGNORED_PACKAGES := \
-	github.com/artefactual-sdps/cva-enduro-workflows/hack/%
+	github.com/artefactual-sdps/cva-enduro-workflows/hack/% \
+	github.com/artefactual-sdps/cva-enduro-workflows/internal/enums
+	
 PACKAGES := $(shell go list ./...)
 TEST_PACKAGES := $(filter-out $(IGNORED_PACKAGES),$(PACKAGES))
 TEST_IGNORED_PACKAGES := $(filter $(IGNORED_PACKAGES),$(PACKAGES))
@@ -55,6 +57,8 @@ env:
 deps: # @HELP List available module dependency updates.
 deps: $(GOMAJOR)
 	gomajor list
+
+gen-enums: $(ENUMS) # @HELP Generate go-enum assets (see hack/make/enums.mk).
 
 golines: # @HELP Run the golines formatter to fix long lines.
 golines: GOLINES_OUT_MODE ?= write-output

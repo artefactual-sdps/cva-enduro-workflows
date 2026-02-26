@@ -5,7 +5,7 @@ $(call _assert_var,UNAME_ARCH)
 $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
-GO_ENUM_VERSION ?= 0.6.0
+GO_ENUM_VERSION ?= 0.9.2
 
 GO_ENUM := $(CACHE_VERSIONS)/go-enum/$(GO_ENUM_VERSION)
 $(GO_ENUM):
