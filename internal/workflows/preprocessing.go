@@ -11,6 +11,8 @@ import (
 	temporalsdk_workflow "go.temporal.io/sdk/workflow"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
+	"github.com/artefactual-sdps/cva-enduro-workflows/internal/enums"
+	"github.com/artefactual-sdps/cva-enduro-workflows/internal/tasks"
 )
 
 type (
@@ -22,13 +24,45 @@ type (
 		SIPID        uuid.UUID
 	}
 	PreprocessingResult struct {
-		Outcome      Outcome
-		RelativePath string
+		Outcome           Outcome
+		RelativePath      string
+		PreservationTasks []*tasks.Task
 	}
 )
 
 func NewPreprocessing(cfg config.Config) *Preprocesssing {
 	return &Preprocesssing{cfg: cfg}
+}
+
+func (r *PreprocessingResult) completeTask(ctx temporalsdk_workflow.Context, task *tasks.Task, message string) {
+	task.Complete(
+		temporalsdk_workflow.Now(ctx),
+		enums.TaskOutcomeSuccess,
+		message,
+	)
+	r.PreservationTasks = append(r.PreservationTasks, task)
+}
+
+func (r *PreprocessingResult) systemError(
+	ctx temporalsdk_workflow.Context,
+	task *tasks.Task,
+	msg string,
+	err error,
+) (*PreprocessingResult, error) {
+	r.Outcome = OutcomeSystemError
+
+	logger := temporalsdk_workflow.GetLogger(ctx)
+	logger.Error("Task failed with error", "task", task.Name, "error", err)
+
+	task.Complete(
+		temporalsdk_workflow.Now(ctx),
+		enums.TaskOutcomeSystemFailure,
+		fmt.Sprintf("System error: %v", msg),
+	)
+
+	r.PreservationTasks = append(r.PreservationTasks, task)
+
+	return r, nil
 }
 
 func (w *Preprocesssing) Execute(
@@ -43,17 +77,22 @@ func (w *Preprocesssing) Execute(
 	logger := temporalsdk_workflow.GetLogger(ctx)
 	logger.Debug("Preprocessing workflow running!", "params", params)
 
-	uploadResult, err := w.uploadContainerMDFile(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("preprocessing: upload ContainerMetadata.xml file: %w", err)
-	}
+	uploadTask := tasks.New(temporalsdk_workflow.Now(ctx), "Upload ContainerMetadata.xml")
 
-	logger.Debug(
-		"Uploaded ContainerMetadata.xml file to ingest bucket",
-		"key", uploadResult.Key,
-	)
+	err = w.uploadContainerMDFile(ctx, params)
+	if err != nil {
+		return result.systemError(
+			ctx,
+			uploadTask,
+			"An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
+			err,
+		)
+	}
+	result.completeTask(ctx, uploadTask, "ContainerMetadata.xml file uploaded to the Enduro ingest bucket")
 
 	// Bag the SIP for Enduro processing.
+	bagTask := tasks.New(temporalsdk_workflow.Now(ctx), "Bag SIP")
+
 	var createBag bagcreate.Result
 	err = temporalsdk_workflow.ExecuteActivity(
 		withFilesysOpts(ctx, 10*time.Minute),
@@ -63,8 +102,14 @@ func (w *Preprocesssing) Execute(
 		},
 	).Get(ctx, &createBag)
 	if err != nil {
-		return nil, fmt.Errorf("preprocessing: bag SIP: %w", err)
+		return result.systemError(
+			ctx,
+			bagTask,
+			"An error occurred when bagging the SIP. Please try again, or ask a system administrator to investigate.",
+			err,
+		)
 	}
+	result.completeTask(ctx, bagTask, "SIP has been bagged")
 
 	result.Outcome = OutcomeSuccess
 	result.RelativePath = params.RelativePath
@@ -79,7 +124,7 @@ func (w *Preprocesssing) Execute(
 func (w *Preprocesssing) uploadContainerMDFile(
 	ctx temporalsdk_workflow.Context,
 	params *PreprocessingRequest,
-) (*bucketupload.Result, error) {
+) error {
 	path := filepath.Join(
 		w.cfg.Preprocessing.SharedPath,
 		params.RelativePath,
@@ -90,7 +135,7 @@ func (w *Preprocesssing) uploadContainerMDFile(
 	key := fmt.Sprintf("%s_ContainerMetadata.xml", params.SIPID)
 
 	fsCtx := withFilesysOpts(ctx, 10*time.Minute)
-	var result bucketupload.Result
+	var res bucketupload.Result
 	err := temporalsdk_workflow.ExecuteActivity(
 		fsCtx,
 		bucketupload.Name,
@@ -99,10 +144,10 @@ func (w *Preprocesssing) uploadContainerMDFile(
 			Key:        key,
 			BufferSize: 100_000_000,
 		},
-	).Get(fsCtx, &result)
+	).Get(fsCtx, &res)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("upload ContainerMetadata.xml file: %w", err)
 	}
 
-	return &result, nil
+	return nil
 }
