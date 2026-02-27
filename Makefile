@@ -21,6 +21,7 @@ include hack/make/dep_golines.mk
 include hack/make/dep_gomajor.mk
 include hack/make/dep_gosec.mk
 include hack/make/dep_gotestsum.mk
+include hack/make/dep_govulncheck.mk
 include hack/make/dep_shfmt.mk
 include hack/make/dep_tparse.mk
 include hack/make/enums.mk
@@ -30,6 +31,7 @@ TOOLS = $(GOLANGCI_LINT) \
 	$(GOMAJOR) \
 	$(GOSEC) \
 	$(GOTESTSUM) \
+	$(GOVULNCHECK) \
 	$(SHFMT) \
 	$(TPARSE)
 
@@ -74,6 +76,11 @@ gosec: $(GOSEC)
 		-exclude-dir=hack \
 		./...
 
+govulncheck: # @HELP Run govulncheck to check for vulnerable dependencies.
+govulncheck: GOVULNCHECK_FLAGS ?= -show color
+govulncheck: $(GOVULNCHECK)
+	govulncheck $(GOVULNCHECK_FLAGS) ./...
+
 help: # @HELP Print this message.
 help:
 	echo "TARGETS:"
@@ -105,6 +112,7 @@ pre-commit:
 	ENDURO_PP_INTEGRATION_TEST=1 $(MAKE) -j \
 	golines \
 	gosec GOSEC_VERBOSITY="-quiet" \
+	govulncheck \
 	lint \
 	shfmt \
 	test-race
