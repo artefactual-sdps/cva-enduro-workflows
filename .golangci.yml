@@ -1,49 +1,63 @@
-run:
-  deadline: 60s
-
+version: "2"
 linters:
   enable:
     - contextcheck
-    - gci
-    - gofumpt
     - gosec
     - importas
     - intrange
     - misspell
     - tparallel
     - unparam
-
-issues:
-  exclude-dirs:
-    - hack
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-
-linters-settings:
-  gci:
-    no-inline-comments: true
-    no-prefix-comments: false
-    sections:
-      - standard
-      - default
-      - prefix(github.com/artefactual-sdps/cva-enduro-workflows)
-    section-separators:
-      - newLine
-  gofumpt:
-    extra-rules: true
-  importas:
-    no-unaliased: true
-    no-extra-aliases: false
-    alias:
-      - pkg: go.temporal.io/sdk/contrib/(\w+)
-        alias: temporalsdk_contrib_$1
-      - pkg: go.temporal.io/sdk/(\w+)
-        alias: temporalsdk_$1
-      - pkg: go.temporal.io/api/(\w+)
-        alias: temporalapi_$1
-  gosec:
-    exclude-generated: false
-    severity: low
-    confidence: low
+  settings:
+    gosec:
+      severity: low
+      confidence: low
+    importas:
+      alias:
+        - pkg: go.temporal.io/sdk/contrib/(\w+)
+          alias: temporalsdk_contrib_$1
+        - pkg: go.temporal.io/sdk/(\w+)
+          alias: temporalsdk_$1
+        - pkg: go.temporal.io/api/(\w+)
+          alias: temporalapi_$1
+      no-unaliased: true
+      no-extra-aliases: false
+  exclusions:
+    generated: lax
+    paths:
+      - hack
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+        path: _test\.go
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - golines
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/artefactual-sdps/cva-enduro-workflows)
+      no-inline-comments: true
+      no-prefix-comments: false
+    gofumpt:
+      extra-rules: true
+    golines:
+      max-len: 120
+      chain-split-dots: true
+      reformat-tags: true
+      shorten-comments: true
+  exclusions:
+    generated: lax
+    paths:
+      - hack
+run:
+  timeout: 60s
