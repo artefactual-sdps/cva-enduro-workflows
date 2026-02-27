@@ -91,10 +91,9 @@ help:
 	    '
 
 lint: # @HELP Lint the project Go files with golangci-lint.
-lint: OUT_FORMAT ?= colored-line-number
 lint: LINT_FLAGS ?= --timeout=5m --fix
 lint: $(GOLANGCI_LINT)
-	golangci-lint run --out-format $(OUT_FORMAT) $(LINT_FLAGS)
+	golangci-lint run $(LINT_FLAGS)
 
 list-tested-packages: # @HELP Print a list of packages being tested.
 list-tested-packages:
