@@ -177,7 +177,7 @@ func Read(config *Config, configFile string) (found bool, configFileUsed string,
 	}
 
 	if err := config.Validate(); err != nil {
-		return true, "", errors.Join(errors.New("invalid configuration:"), err)
+		return true, "", errors.Join(errors.New("invalid configuration"), err)
 	}
 
 	return true, v.ConfigFileUsed(), nil

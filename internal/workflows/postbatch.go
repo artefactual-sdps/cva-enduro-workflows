@@ -53,7 +53,7 @@ func (w *Postbatch) Execute(
 		},
 	).Get(fsCtx, &csvResult)
 	if err != nil {
-		return nil, fmt.Errorf("Create CSV: %w", err)
+		return nil, fmt.Errorf("create CSV: %w", err)
 	}
 
 	result.Outcome = OutcomeSuccess
