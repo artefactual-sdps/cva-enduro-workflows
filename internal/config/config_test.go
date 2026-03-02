@@ -92,7 +92,7 @@ func TestConfig(t *testing.T) {
 namespace = ""
 `,
 			wantFound: true,
-			wantErr: `invalid configuration:
+			wantErr: `invalid configuration
 Temporal.Address: missing required value
 Temporal.Namespace: missing required value
 Worker.TaskQueue: missing required value
@@ -121,7 +121,7 @@ checksumAlgorithm = "sha256"
 workflowName = "postbatch"
 `,
 			wantFound: true,
-			wantErr: `invalid configuration:
+			wantErr: `invalid configuration
 Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 		},
 		{
