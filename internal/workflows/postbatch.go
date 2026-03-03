@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artefactual-sdps/temporal-activities/bucketdownload"
 	temporalsdk_workflow "go.temporal.io/sdk/workflow"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/activities"
@@ -40,6 +41,32 @@ func (w *Postbatch) Execute(
 
 	logger := temporalsdk_workflow.GetLogger(ctx)
 	logger.Debug("Postbatch workflow running!", "params", params)
+
+	// Download the ContainerMetadata.xml files for the batch from the ingest
+	// bucket.
+	for _, sip := range params.SIPs {
+		key := fmt.Sprintf("%s_ContainerMetadata.xml", sip.UUID)
+		fsCtx := withFilesysOpts(ctx, 10*time.Minute)
+		var dlResult bucketdownload.Result
+		err = temporalsdk_workflow.ExecuteActivity(
+			fsCtx,
+			bucketdownload.Name,
+			&bucketdownload.Params{
+				DirPath: w.cfg.Postbatch.ProcessingDir,
+				Key:     key,
+			},
+		).Get(fsCtx, &dlResult)
+		if err != nil {
+			return nil, fmt.Errorf("download ContainerMetadata.xml for SIP %s: %w", sip.UUID, err)
+		}
+
+		logger.Debug(
+			"Downloaded ContainerMetadata.xml from ingest bucket",
+			"sip", sip.UUID,
+			"key", key,
+			"path", dlResult.FilePath,
+		)
+	}
 
 	// Create an AtoM CSV file for all the SIPs in the batch.
 	fsCtx := withFilesysOpts(ctx, 10*time.Minute)

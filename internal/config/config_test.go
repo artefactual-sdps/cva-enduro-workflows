@@ -34,6 +34,7 @@ sharedPath = "/home/enduro/shared"
 checksumAlgorithm = "sha256"
 [postbatch]
 workflowName = "postbatch"
+processingDir = "/home/enduro/processing"
 `
 
 func TestConfig(t *testing.T) {
@@ -73,7 +74,7 @@ func TestConfig(t *testing.T) {
 						ChecksumAlgorithm: "sha256",
 					},
 				},
-				Postbatch: config.PostbatchConfig{WorkflowName: "postbatch"},
+				Postbatch: config.PostbatchConfig{WorkflowName: "postbatch", ProcessingDir: "/home/enduro/processing"},
 				IngestBucket: &bucket.Config{
 					Endpoint:  "http://minio.enduro-sdps:9000",
 					PathStyle: true,
@@ -98,7 +99,8 @@ Temporal.Namespace: missing required value
 Worker.TaskQueue: missing required value
 Preprocessing.WorkflowName: missing required value
 Preprocessing.SharedPath: missing required value
-Postbatch.WorkflowName: missing required value`,
+Postbatch.WorkflowName: missing required value
+Postbatch.ProcessingDir: missing required value`,
 		},
 		{
 			name:       "Errors when MaxConcurrentSessions is less than 1",
@@ -119,6 +121,7 @@ sharedPath = "/home/enduro/shared"
 checksumAlgorithm = "sha256"
 [postbatch]
 workflowName = "postbatch"
+processingDir = "/home/enduro/processing"
 `,
 			wantFound: true,
 			wantErr: `invalid configuration

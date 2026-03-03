@@ -125,14 +125,23 @@ func (c PreprocessingConfig) Validate() error {
 type PostbatchConfig struct {
 	// WorkflowName is the postbatch Temporal workflow name (required).
 	WorkflowName string
+
+	// ProcessingDir is the local directory where the postbatch workflow
+	// downloads files from the ingest bucket for processing (required).
+	ProcessingDir string
 }
 
 func (c PostbatchConfig) Validate() error {
+	var errs error
+
 	if c.WorkflowName == "" {
-		return errRequired("Postbatch.WorkflowName")
+		errs = errors.Join(errs, errRequired("Postbatch.WorkflowName"))
+	}
+	if c.ProcessingDir == "" {
+		errs = errors.Join(errs, errRequired("Postbatch.ProcessingDir"))
 	}
 
-	return nil
+	return errs
 }
 
 func Read(config *Config, configFile string) (found bool, configFileUsed string, err error) {

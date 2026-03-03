@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artefactual-sdps/temporal-activities/bucketdownload"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -46,6 +47,11 @@ func (s *PostbatchTestSuite) SetupWorkflowTest(cfg config.Config) {
 	s.bucket = b
 
 	s.env.RegisterActivityWithOptions(
+		bucketdownload.New(s.bucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bucketdownload.Name},
+	)
+
+	s.env.RegisterActivityWithOptions(
 		activities.NewCreateCSV(s.bucket).Execute,
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
@@ -67,10 +73,33 @@ func (s *PostbatchTestSuite) TestHappyPath() {
 		Name:  "Test SIP",
 		AIPID: ref.New(uuid.MustParse("11111111-2222-3333-4444-555555555555")),
 	}
+	processingDir := s.T().TempDir()
 
 	s.SetupWorkflowTest(config.Config{
 		IngestBucket: &bucket.Config{URL: "mem://"},
+		Postbatch: config.PostbatchConfig{
+			WorkflowName:  "postbatch",
+			ProcessingDir: processingDir,
+		},
 	})
+
+	s.env.OnActivity(
+		bucketdownload.Name,
+		mock.AnythingOfType("*context.timerCtx"),
+		&bucketdownload.Params{
+			DirPath: processingDir,
+			Key:     fmt.Sprintf("%s_ContainerMetadata.xml", sip.UUID),
+		},
+	).Return(
+		&bucketdownload.Result{
+			FilePath: fmt.Sprintf(
+				"%s/%s_ContainerMetadata.xml",
+				processingDir,
+				sip.UUID,
+			),
+		},
+		nil,
+	)
 
 	s.env.OnActivity(
 		activities.CreateCSVName,

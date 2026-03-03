@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artefactual-sdps/temporal-activities/bagcreate"
+	"github.com/artefactual-sdps/temporal-activities/bucketdownload"
 	"github.com/artefactual-sdps/temporal-activities/bucketupload"
 	"github.com/go-logr/logr"
 	"go.artefactual.dev/tools/bucket"
@@ -117,6 +118,11 @@ func (m *Main) registerPostbatchWorkflow() {
 	m.temporalWorker.RegisterWorkflowWithOptions(
 		workflows.NewPostbatch(m.cfg).Execute,
 		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Postbatch.WorkflowName},
+	)
+
+	m.temporalWorker.RegisterActivityWithOptions(
+		bucketdownload.New(m.ingestBucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bucketdownload.Name},
 	)
 
 	m.temporalWorker.RegisterActivityWithOptions(

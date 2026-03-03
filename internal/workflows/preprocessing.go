@@ -95,7 +95,7 @@ func (w *Preprocesssing) Execute(
 
 	var createBag bagcreate.Result
 	err = temporalsdk_workflow.ExecuteActivity(
-		withFilesysOpts(ctx, 10*time.Minute),
+		withFilesysOpts(ctx, time.Hour),
 		bagcreate.Name,
 		&bagcreate.Params{
 			SourcePath: filepath.Join(w.cfg.Preprocessing.SharedPath, params.RelativePath),
