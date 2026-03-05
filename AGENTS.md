@@ -103,6 +103,12 @@ permitted. Required aliases:
 | `go.temporal.io/sdk/contrib/<pkg>` | `temporalsdk_contrib_<pkg>` |
 | `go.temporal.io/api/<pkg>`         | `temporalapi_<pkg>`         |
 
+### Commentary
+
+- Exported functions and methods must have doc comments.
+- Comments must have line breaks at 80 characters or less, unless a line
+  contains a very long URL or other string with no natural break points.
+
 ---
 
 ## Naming conventions
