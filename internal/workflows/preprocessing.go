@@ -17,7 +17,7 @@ import (
 
 type (
 	Preprocesssing struct {
-		cfg config.Config
+		cfg config.PreprocessingConfig
 	}
 	PreprocessingRequest struct {
 		RelativePath string
@@ -30,7 +30,7 @@ type (
 	}
 )
 
-func NewPreprocessing(cfg config.Config) *Preprocesssing {
+func NewPreprocessing(cfg config.PreprocessingConfig) *Preprocesssing {
 	return &Preprocesssing{cfg: cfg}
 }
 
@@ -98,7 +98,7 @@ func (w *Preprocesssing) Execute(
 		withFilesysOpts(ctx, 10*time.Minute),
 		bagcreate.Name,
 		&bagcreate.Params{
-			SourcePath: filepath.Join(w.cfg.Preprocessing.SharedPath, params.RelativePath),
+			SourcePath: filepath.Join(w.cfg.SharedPath, params.RelativePath),
 		},
 	).Get(ctx, &createBag)
 	if err != nil {
@@ -126,7 +126,7 @@ func (w *Preprocesssing) uploadContainerMDFile(
 	params *PreprocessingRequest,
 ) error {
 	path := filepath.Join(
-		w.cfg.Preprocessing.SharedPath,
+		w.cfg.SharedPath,
 		params.RelativePath,
 		"metadata",
 		"submissionDocumentation",

@@ -50,7 +50,7 @@ func (s *PostbatchTestSuite) SetupWorkflowTest(cfg config.Config) {
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
 
-	s.workflow = workflows.NewPostbatch(cfg)
+	s.workflow = workflows.NewPostbatch(cfg.Postbatch)
 }
 
 func (s *PostbatchTestSuite) TearDownTest() {

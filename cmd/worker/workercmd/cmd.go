@@ -98,7 +98,7 @@ func (m *Main) Close() error {
 
 func (m *Main) registerPreprocessingWorkflow() {
 	m.temporalWorker.RegisterWorkflowWithOptions(
-		workflows.NewPreprocessing(m.cfg).Execute,
+		workflows.NewPreprocessing(m.cfg.Preprocessing).Execute,
 		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Preprocessing.WorkflowName},
 	)
 
@@ -115,7 +115,7 @@ func (m *Main) registerPreprocessingWorkflow() {
 
 func (m *Main) registerPostbatchWorkflow() {
 	m.temporalWorker.RegisterWorkflowWithOptions(
-		workflows.NewPostbatch(m.cfg).Execute,
+		workflows.NewPostbatch(m.cfg.Postbatch).Execute,
 		temporalsdk_workflow.RegisterOptions{Name: m.cfg.Postbatch.WorkflowName},
 	)
 
