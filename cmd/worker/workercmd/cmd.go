@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artefactual-sdps/temporal-activities/bagcreate"
+	"github.com/artefactual-sdps/temporal-activities/bucketdelete"
 	"github.com/artefactual-sdps/temporal-activities/bucketupload"
 	"github.com/go-logr/logr"
 	"go.artefactual.dev/tools/bucket"
@@ -122,5 +123,10 @@ func (m *Main) registerPostbatchWorkflow() {
 	m.temporalWorker.RegisterActivityWithOptions(
 		activities.NewCreateCSV(m.ingestBucket).Execute,
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
+	)
+
+	m.temporalWorker.RegisterActivityWithOptions(
+		bucketdelete.New(m.ingestBucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bucketdelete.Name},
 	)
 }

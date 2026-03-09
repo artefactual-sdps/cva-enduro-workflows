@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artefactual-sdps/temporal-activities/bucketdelete"
 	temporalsdk_workflow "go.temporal.io/sdk/workflow"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/activities"
@@ -54,6 +55,22 @@ func (w *Postbatch) Execute(
 	).Get(fsCtx, &csvResult)
 	if err != nil {
 		return nil, fmt.Errorf("create CSV: %w", err)
+	}
+
+	// Delete the ContainerMetadata.xml file for each SIP in the batch.
+	for _, sip := range params.SIPs {
+		key := fmt.Sprintf("%s_ContainerMetadata.xml", sip.UUID)
+		fsCtx := withFilesysOpts(ctx, 1*time.Minute)
+		err = temporalsdk_workflow.ExecuteActivity(
+			fsCtx,
+			bucketdelete.Name,
+			bucketdelete.Params{
+				Key: key,
+			},
+		).Get(fsCtx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("delete %s from ingest bucket: %v", key, err)
+		}
 	}
 
 	result.Outcome = OutcomeSuccess
