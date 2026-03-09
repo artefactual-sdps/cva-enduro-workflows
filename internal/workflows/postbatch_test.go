@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artefactual-sdps/temporal-activities/bucketdelete"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -50,6 +51,11 @@ func (s *PostbatchTestSuite) SetupWorkflowTest(cfg config.Config) {
 		temporalsdk_activity.RegisterOptions{Name: activities.CreateCSVName},
 	)
 
+	s.env.RegisterActivityWithOptions(
+		bucketdelete.New(s.bucket).Execute,
+		temporalsdk_activity.RegisterOptions{Name: bucketdelete.Name},
+	)
+
 	s.workflow = workflows.NewPostbatch(cfg.Postbatch)
 }
 
@@ -85,6 +91,14 @@ func (s *PostbatchTestSuite) TestHappyPath() {
 		},
 		nil,
 	)
+
+	s.env.OnActivity(
+		bucketdelete.Name,
+		mock.AnythingOfType("*context.timerCtx"),
+		&bucketdelete.Params{
+			Key: fmt.Sprintf("%s_ContainerMetadata.xml", sip.UUID),
+		},
+	).Return(nil, nil)
 
 	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PostbatchRequest{
 		Batch: batch,
