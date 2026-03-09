@@ -13,7 +13,7 @@ import (
 
 type (
 	Postbatch struct {
-		cfg config.Config
+		cfg config.PostbatchConfig
 	}
 	PostbatchRequest struct {
 		Batch *types.Batch
@@ -25,7 +25,7 @@ type (
 	}
 )
 
-func NewPostbatch(cfg config.Config) *Postbatch {
+func NewPostbatch(cfg config.PostbatchConfig) *Postbatch {
 	return &Postbatch{cfg: cfg}
 }
 

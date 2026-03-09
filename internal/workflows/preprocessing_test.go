@@ -72,7 +72,7 @@ func (s *PreprocessingTestSuite) SetupWorkflowTest(cfg config.Config) {
 		temporalsdk_activity.RegisterOptions{Name: bagcreate.Name},
 	)
 
-	s.workflow = workflows.NewPreprocessing(cfg)
+	s.workflow = workflows.NewPreprocessing(cfg.Preprocessing)
 }
 
 func (s *PreprocessingTestSuite) TearDownTest() {
