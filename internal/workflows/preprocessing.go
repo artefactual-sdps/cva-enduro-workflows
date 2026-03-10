@@ -22,6 +22,7 @@ type (
 	PreprocessingRequest struct {
 		RelativePath string
 		SIPID        uuid.UUID
+		BatchID      uuid.UUID
 	}
 	PreprocessingResult struct {
 		Outcome           Outcome
@@ -77,18 +78,23 @@ func (w *Preprocesssing) Execute(
 	logger := temporalsdk_workflow.GetLogger(ctx)
 	logger.Debug("Preprocessing workflow running!", "params", params)
 
-	uploadTask := tasks.New(temporalsdk_workflow.Now(ctx), "Upload ContainerMetadata.xml")
+	// Upload the ContainerMetadata.xml file only if this SIP is part of a
+	// batch; single SIPs don't write a Batch CSV file, so the metadata is
+	// not needed.
+	if params.BatchID != uuid.Nil {
+		uploadTask := tasks.New(temporalsdk_workflow.Now(ctx), "Upload ContainerMetadata.xml")
 
-	err = w.uploadContainerMDFile(ctx, params)
-	if err != nil {
-		return result.systemError(
-			ctx,
-			uploadTask,
-			"An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
-			err,
-		)
+		err = w.uploadContainerMDFile(ctx, params)
+		if err != nil {
+			return result.systemError(
+				ctx,
+				uploadTask,
+				"An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
+				err,
+			)
+		}
+		result.completeTask(ctx, uploadTask, "ContainerMetadata.xml file uploaded to the Enduro ingest bucket")
 	}
-	result.completeTask(ctx, uploadTask, "ContainerMetadata.xml file uploaded to the Enduro ingest bucket")
 
 	// Bag the SIP for Enduro processing.
 	bagTask := tasks.New(temporalsdk_workflow.Now(ctx), "Bag SIP")

@@ -20,6 +20,7 @@ import (
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/enums"
+	"github.com/artefactual-sdps/cva-enduro-workflows/internal/tasks"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflows"
 )
 
@@ -79,10 +80,11 @@ func (s *PreprocessingTestSuite) TearDownTest() {
 	s.bucket.Close()
 }
 
-func (s *PreprocessingTestSuite) TestHappyPath() {
+func (s *PreprocessingTestSuite) TestBatchSuccess() {
 	sharedPath := s.T().TempDir()
 	relativePath := "SIP-01234"
 	sipID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000")
+	batchID := uuid.MustParse("223e4567-e89b-12d3-a456-426614174000")
 	key := fmt.Sprintf("%s_ContainerMetadata.xml", sipID)
 
 	if err := createSIP(sharedPath, relativePath); err != nil {
@@ -131,37 +133,43 @@ func (s *PreprocessingTestSuite) TestHappyPath() {
 	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
 		RelativePath: relativePath,
 		SIPID:        sipID,
+		BatchID:      batchID,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 
 	var result workflows.PreprocessingResult
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.Equal(workflows.OutcomeSuccess, result.Outcome)
-	s.Equal(relativePath, result.RelativePath)
-
-	s.Require().Len(result.PreservationTasks, 2)
-
-	uploadTask := result.PreservationTasks[0]
-
-	s.Equal("Upload ContainerMetadata.xml", uploadTask.Name)
-	s.Equal(enums.TaskOutcomeSuccess, uploadTask.Outcome)
-	s.Equal("ContainerMetadata.xml file uploaded to the Enduro ingest bucket", uploadTask.Message)
-	s.Equal(s.startTime, uploadTask.StartedAt)
-	s.Equal(s.startTime.Add(time.Second), uploadTask.CompletedAt)
-
-	bagTask := result.PreservationTasks[1]
-	s.Equal("Bag SIP", bagTask.Name)
-	s.Equal(enums.TaskOutcomeSuccess, bagTask.Outcome)
-	s.Equal("SIP has been bagged", bagTask.Message)
-	s.Equal(s.startTime.Add(time.Second), bagTask.StartedAt)
-	s.Equal(s.startTime.Add(2*time.Second), bagTask.CompletedAt)
+	s.Equal(
+		workflows.PreprocessingResult{
+			Outcome:      workflows.OutcomeSuccess,
+			RelativePath: relativePath,
+			PreservationTasks: []*tasks.Task{
+				{
+					Name:        "Upload ContainerMetadata.xml",
+					Outcome:     enums.TaskOutcomeSuccess,
+					Message:     "ContainerMetadata.xml file uploaded to the Enduro ingest bucket",
+					StartedAt:   s.startTime,
+					CompletedAt: s.startTime.Add(time.Second),
+				},
+				{
+					Name:        "Bag SIP",
+					Outcome:     enums.TaskOutcomeSuccess,
+					Message:     "SIP has been bagged",
+					StartedAt:   s.startTime.Add(time.Second),
+					CompletedAt: s.startTime.Add(2 * time.Second),
+				},
+			},
+		},
+		result,
+	)
 }
 
-func (s *PreprocessingTestSuite) TestUploadContainerMDFileError() {
+func (s *PreprocessingTestSuite) TestBatchContainerMDUploadError() {
 	sharedPath := s.T().TempDir()
 	relativePath := "SIP-01234"
 	sipID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000")
+	batchID := uuid.MustParse("223e4567-e89b-12d3-a456-426614174000")
 	key := fmt.Sprintf("%s_ContainerMetadata.xml", sipID)
 
 	if err := createSIP(sharedPath, relativePath); err != nil {
@@ -197,24 +205,83 @@ func (s *PreprocessingTestSuite) TestUploadContainerMDFileError() {
 	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
 		RelativePath: relativePath,
 		SIPID:        sipID,
+		BatchID:      batchID,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 
 	var result workflows.PreprocessingResult
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.Equal(workflows.OutcomeSystemError, result.Outcome)
-
-	s.Require().Len(result.PreservationTasks, 1)
-
-	uploadTask := result.PreservationTasks[0]
-	s.Equal("Upload ContainerMetadata.xml", uploadTask.Name)
-	s.Equal(enums.TaskOutcomeSystemFailure, uploadTask.Outcome)
 	s.Equal(
-		"System error: An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
-		uploadTask.Message,
+		workflows.PreprocessingResult{
+			Outcome: workflows.OutcomeSystemError,
+			PreservationTasks: []*tasks.Task{
+				{
+					Name:        "Upload ContainerMetadata.xml",
+					Outcome:     enums.TaskOutcomeSystemFailure,
+					Message:     "System error: An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
+					StartedAt:   s.startTime,
+					CompletedAt: s.startTime.Add(time.Second),
+				},
+			},
+		},
+		result,
 	)
+}
 
-	s.Equal(s.startTime, uploadTask.StartedAt)
-	s.Equal(s.startTime.Add(time.Second), uploadTask.CompletedAt)
+func (s *PreprocessingTestSuite) TestNoBatchSuccess() {
+	sharedPath := s.T().TempDir()
+	relativePath := "SIP-01234"
+	sipID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000")
+
+	if err := createSIP(sharedPath, relativePath); err != nil {
+		s.FailNow("Unable to create SIP for test", "error", err)
+	}
+
+	s.SetupWorkflowTest(config.Config{
+		IngestBucket: &bucket.Config{URL: "mem://"},
+		Preprocessing: config.PreprocessingConfig{
+			WorkflowName: "preprocessing-test",
+			SharedPath:   sharedPath,
+			BagCreate: bagcreate.Config{
+				ChecksumAlgorithm: "sha512",
+			},
+		},
+	})
+
+	s.env.OnActivity(
+		bagcreate.Name,
+		mock.AnythingOfType("*context.timerCtx"),
+		&bagcreate.Params{
+			SourcePath: filepath.Join(sharedPath, relativePath),
+		},
+	).Return(
+		&bagcreate.Result{}, nil,
+	).After(time.Second)
+
+	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
+		RelativePath: relativePath,
+		SIPID:        sipID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+
+	var result workflows.PreprocessingResult
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.Equal(
+		workflows.PreprocessingResult{
+			Outcome:      workflows.OutcomeSuccess,
+			RelativePath: relativePath,
+			PreservationTasks: []*tasks.Task{
+				{
+					Name:        "Bag SIP",
+					Outcome:     enums.TaskOutcomeSuccess,
+					Message:     "SIP has been bagged",
+					StartedAt:   s.startTime,
+					CompletedAt: s.startTime.Add(time.Second),
+				},
+			},
+		},
+		result,
+	)
 }
