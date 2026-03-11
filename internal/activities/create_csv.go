@@ -60,6 +60,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 
 	// Write header.
 	err = cw.Write([]string{
+		"legacyId",
 		"qubitParentSlug",
 		"acquisition",
 		"eventTypes",
@@ -111,6 +112,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 		}
 
 		err = cw.Write([]string{
+			fmt.Sprintf("%d", i+1),                        // legacyId
 			md.QubitParentSlug(),                          // qubitParentSlug
 			md.Acquisition(),                              // acquisition
 			joinWithPipe(events, types.Event.GetType),     // eventTypes
