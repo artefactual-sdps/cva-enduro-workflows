@@ -57,7 +57,8 @@ func seedContainerMetadataXML(t *testing.T, b *blob.Bucket, sipUUID uuid.UUID, x
 }
 
 const (
-	csvHeader = "qubitParentSlug," +
+	csvHeader = "legacyId," +
+		"qubitParentSlug," +
 		"acquisition," +
 		"eventTypes," +
 		"eventDates," +
@@ -131,6 +132,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
 			want: csvHeader +
 				"\n" +
+				"1," +
 				"01-5000-12," +
 				"VanDocs transfer: 900036," +
 				"Creation|Recordkeeping," +
@@ -148,7 +150,9 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"draft," +
 				accessConditionsValue +
 				"\n" +
-				"01-5000-12,VanDocs transfer: 900037," +
+				"2," +
+				"01-5000-12," +
+				"VanDocs transfer: 900037," +
 				"Creation|Recordkeeping," +
 				"2010-2015|NULL," +
 				"2010-02-01|NULL," +
@@ -186,6 +190,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
 			want: csvHeader +
 				"\n" +
+				"1," +
 				"01-5000-12," +
 				"VanDocs transfer: 900036," +
 				"Recordkeeping," +
@@ -224,6 +229,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
 			want: csvHeader +
 				"\n" +
+				"1," +
 				"01-5000-12," +
 				"VanDocs transfer: 900036," +
 				"," +
