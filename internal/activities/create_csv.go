@@ -72,6 +72,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 		"alternativeIdentifiers",
 		"alternativeIdentifierLabels",
 		"title",
+		"extentAndMedium",
 		"radGeneralMaterialDesignation",
 		"levelOfDescription",
 		"culture",
@@ -111,6 +112,11 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 			events = append(events, e)
 		}
 
+		var extentAndMedium string
+		if sip.FileCount > 0 {
+			extentAndMedium = fmt.Sprintf("%d digital documents", sip.FileCount)
+		}
+
 		err = cw.Write([]string{
 			fmt.Sprintf("%d", i+1),                        // legacyId
 			md.QubitParentSlug(),                          // qubitParentSlug
@@ -124,6 +130,7 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 			strings.Join(altIDs, "|"),                     // alternativeIdentifiers
 			strings.Join(altLabels, "|"),                  // alternativeIdentifierLabels
 			md.Title(),                                    // title
+			extentAndMedium,                               // extentAndMedium
 			"Multiple media",                              // radGeneralMaterialDesignation
 			"File",                                        // levelOfDescription
 			"en",                                          // culture
