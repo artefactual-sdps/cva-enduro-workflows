@@ -3,6 +3,7 @@ package activities_test
 import (
 	"context"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -57,28 +58,31 @@ func seedContainerMetadataXML(t *testing.T, b *blob.Bucket, sipUUID uuid.UUID, x
 }
 
 const (
-	csvHeader = "legacyId," +
-		"qubitParentSlug," +
-		"acquisition," +
-		"eventTypes," +
-		"eventDates," +
-		"eventStartDates," +
-		"eventEndDates," +
-		"eventActors," +
-		"identifier," +
-		"alternativeIdentifiers," +
-		"alternativeIdentifierLabels," +
-		"title," +
-		"radGeneralMaterialDesignation," +
-		"levelOfDescription," +
-		"culture," +
-		"publicationStatus," +
-		"accessConditions"
-
 	accessConditionsValue = "This file has not been reviewed for potential" +
 		" FOIPPA restrictions. Access is pending review and may be delayed." +
 		" See archivist for details."
 )
+
+var columns = []string{
+	"legacyId",
+	"qubitParentSlug",
+	"acquisition",
+	"eventTypes",
+	"eventDates",
+	"eventStartDates",
+	"eventEndDates",
+	"eventActors",
+	"identifier",
+	"alternativeIdentifiers",
+	"alternativeIdentifierLabels",
+	"title",
+	"extentAndMedium",
+	"radGeneralMaterialDesignation",
+	"levelOfDescription",
+	"culture",
+	"publicationStatus",
+	"accessConditions",
+}
 
 func TestCreateCSV_Execute(t *testing.T) {
 	t.Parallel()
@@ -106,8 +110,17 @@ func TestCreateCSV_Execute(t *testing.T) {
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
 				SIPs: []*types.SIP{
-					{UUID: sipID1, Name: "Test SIP 1", AIPID: &aipID1},
-					{UUID: sipID2, Name: "Test SIP 2", AIPID: &aipID2},
+					{
+						UUID:      sipID1,
+						Name:      "Test SIP 1",
+						AIPID:     &aipID1,
+						FileCount: 8,
+					},
+					{
+						UUID:  sipID2,
+						Name:  "Test SIP 2",
+						AIPID: &aipID2,
+					},
 				},
 			},
 			setup: func(t *testing.T, b *blob.Bucket) {
@@ -130,7 +143,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				}))
 			},
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
-			want: csvHeader +
+			want: strings.Join(columns, ",") +
 				"\n" +
 				"1," +
 				"01-5000-12," +
@@ -144,6 +157,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"11111111-2222-3333-4444-555555555555|01-5000-12/2009-01," +
 				"AIP UUID|VanDocs container record number," +
 				"Test Title 1," +
+				"8 digital documents," +
 				"Multiple media," +
 				"File," +
 				"en," +
@@ -162,6 +176,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"22222222-3333-4444-5555-666666666666|01-5000-12/2010-02," +
 				"AIP UUID|VanDocs container record number," +
 				"Test Title 2," +
+				"," + // empty extentAndMedium
 				"Multiple media," +
 				"File," +
 				"en," +
@@ -175,7 +190,12 @@ func TestCreateCSV_Execute(t *testing.T) {
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
 				SIPs: []*types.SIP{
-					{UUID: sipID1, Name: "Test SIP 1", AIPID: &aipID1},
+					{
+						UUID:      sipID1,
+						Name:      "Test SIP 1",
+						AIPID:     &aipID1,
+						FileCount: 8,
+					},
 				},
 			},
 			setup: func(t *testing.T, b *blob.Bucket) {
@@ -188,8 +208,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				}))
 			},
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
-			want: csvHeader +
-				"\n" +
+			want: strings.Join(columns, ",") + "\n" +
 				"1," +
 				"01-5000-12," +
 				"VanDocs transfer: 900036," +
@@ -202,6 +221,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"11111111-2222-3333-4444-555555555555|01-5000-12/2009-01," +
 				"AIP UUID|VanDocs container record number," +
 				"Test Title 1," +
+				"8 digital documents," +
 				"Multiple media," +
 				"File," +
 				"en," +
@@ -215,7 +235,11 @@ func TestCreateCSV_Execute(t *testing.T) {
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
 				SIPs: []*types.SIP{
-					{UUID: sipID1, Name: "Test SIP 1", AIPID: &aipID1},
+					{
+						UUID:  sipID1,
+						Name:  "Test SIP 1",
+						AIPID: &aipID1,
+					},
 				},
 			},
 			setup: func(t *testing.T, b *blob.Bucket) {
@@ -227,7 +251,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				}))
 			},
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
-			want: csvHeader +
+			want: strings.Join(columns, ",") +
 				"\n" +
 				"1," +
 				"01-5000-12," +
@@ -241,6 +265,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"11111111-2222-3333-4444-555555555555|01-5000-12/2009-01," +
 				"AIP UUID|VanDocs container record number," +
 				"Test Title 1," +
+				"," + // empty extentAndMedium
 				"Multiple media," +
 				"File," +
 				"en," +
@@ -249,7 +274,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"\n",
 		},
 		{
-			name:      "no SIPs provided",
+			name:      "errors when no SIPs provided",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
@@ -257,7 +282,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			wantErr: "create CSV: no SIPs provided",
 		},
 		{
-			name:      "errors if SIP name is missing",
+			name:      "errors when SIP name is missing",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
@@ -268,7 +293,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			wantErr: "create CSV: SIP 1: missing name",
 		},
 		{
-			name:      "skips SIP if AIP ID is missing",
+			name:      "skips SIP when AIP ID is missing",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
 				Batch: &types.Batch{UUID: batchID},
@@ -277,7 +302,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 				},
 			},
 			expectedKey: "reports/batch_33333333-3333-3333-3333-333333333333.csv",
-			want:        csvHeader + "\n",
+			want:        strings.Join(columns, ",") + "\n",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
