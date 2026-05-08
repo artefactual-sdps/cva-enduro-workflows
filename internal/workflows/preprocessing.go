@@ -5,73 +5,29 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/artefactual-sdps/enduro/pkg/childwf"
 	"github.com/artefactual-sdps/temporal-activities/bagcreate"
 	"github.com/artefactual-sdps/temporal-activities/bucketupload"
 	"github.com/google/uuid"
 	temporalsdk_workflow "go.temporal.io/sdk/workflow"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/enums"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/tasks"
 )
 
-type (
-	Preprocesssing struct {
-		cfg config.PreprocessingConfig
-	}
-	PreprocessingRequest struct {
-		RelativePath string
-		SIPID        uuid.UUID
-		BatchID      uuid.UUID
-	}
-	PreprocessingResult struct {
-		Outcome           Outcome
-		RelativePath      string
-		PreservationTasks []*tasks.Task
-	}
-)
+type Preprocesssing struct {
+	cfg config.PreprocessingConfig
+}
 
 func NewPreprocessing(cfg config.PreprocessingConfig) *Preprocesssing {
 	return &Preprocesssing{cfg: cfg}
 }
 
-func (r *PreprocessingResult) completeTask(ctx temporalsdk_workflow.Context, task *tasks.Task, message string) {
-	task.Complete(
-		temporalsdk_workflow.Now(ctx),
-		enums.TaskOutcomeSuccess,
-		message,
-	)
-	r.PreservationTasks = append(r.PreservationTasks, task)
-}
-
-func (r *PreprocessingResult) systemError(
-	ctx temporalsdk_workflow.Context,
-	task *tasks.Task,
-	msg string,
-	err error,
-) (*PreprocessingResult, error) {
-	r.Outcome = OutcomeSystemError
-
-	logger := temporalsdk_workflow.GetLogger(ctx)
-	logger.Error("Task failed with error", "task", task.Name, "error", err)
-
-	task.Complete(
-		temporalsdk_workflow.Now(ctx),
-		enums.TaskOutcomeSystemFailure,
-		fmt.Sprintf("System error: %v", msg),
-	)
-
-	r.PreservationTasks = append(r.PreservationTasks, task)
-
-	return r, nil
-}
-
 func (w *Preprocesssing) Execute(
 	ctx temporalsdk_workflow.Context,
-	params *PreprocessingRequest,
-) (*PreprocessingResult, error) {
+	params *childwf.PreprocessingParams,
+) (*childwf.PreprocessingResult, error) {
 	var (
-		result PreprocessingResult
+		result childwf.PreprocessingResult
 		err    error
 	)
 
@@ -82,22 +38,26 @@ func (w *Preprocesssing) Execute(
 	// batch; single SIPs don't write a Batch CSV file, so the metadata is
 	// not needed.
 	if params.BatchID != uuid.Nil {
-		uploadTask := tasks.New(temporalsdk_workflow.Now(ctx), "Upload ContainerMetadata.xml")
+		uploadTask := result.NewTask(temporalsdk_workflow.Now(ctx), "Upload ContainerMetadata.xml")
 
 		err = w.uploadContainerMDFile(ctx, params)
 		if err != nil {
-			return result.systemError(
-				ctx,
+			logger.Error("Task failed with error", "task", uploadTask.Name, "error", err)
+			result.SystemError(
+				temporalsdk_workflow.Now(ctx),
 				uploadTask,
 				"An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
-				err,
 			)
+			return &result, nil
 		}
-		result.completeTask(ctx, uploadTask, "ContainerMetadata.xml file uploaded to the Enduro ingest bucket")
+		uploadTask.Succeed(
+			temporalsdk_workflow.Now(ctx),
+			"ContainerMetadata.xml file uploaded to the Enduro ingest bucket",
+		)
 	}
 
 	// Bag the SIP for Enduro processing.
-	bagTask := tasks.New(temporalsdk_workflow.Now(ctx), "Bag SIP")
+	bagTask := result.NewTask(temporalsdk_workflow.Now(ctx), "Bag SIP")
 
 	var createBag bagcreate.Result
 	err = temporalsdk_workflow.ExecuteActivity(
@@ -108,16 +68,16 @@ func (w *Preprocesssing) Execute(
 		},
 	).Get(ctx, &createBag)
 	if err != nil {
-		return result.systemError(
-			ctx,
+		logger.Error("Task failed with error", "task", bagTask.Name, "error", err)
+		result.SystemError(
+			temporalsdk_workflow.Now(ctx),
 			bagTask,
 			"An error occurred when bagging the SIP. Please try again, or ask a system administrator to investigate.",
-			err,
 		)
+		return &result, nil
 	}
-	result.completeTask(ctx, bagTask, "SIP has been bagged")
+	bagTask.Succeed(temporalsdk_workflow.Now(ctx), "SIP has been bagged")
 
-	result.Outcome = OutcomeSuccess
 	result.RelativePath = params.RelativePath
 
 	return &result, nil
@@ -129,7 +89,7 @@ func (w *Preprocesssing) Execute(
 // "<SIPID>_ContainerMetadata.xml" to make it unique.
 func (w *Preprocesssing) uploadContainerMDFile(
 	ctx temporalsdk_workflow.Context,
-	params *PreprocessingRequest,
+	params *childwf.PreprocessingParams,
 ) error {
 	path := filepath.Join(
 		w.cfg.SharedPath,

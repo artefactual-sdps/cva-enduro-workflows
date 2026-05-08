@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/artefactual-sdps/enduro/pkg/childwf"
 	"github.com/google/uuid"
 	"go.artefactual.dev/tools/bucket"
 	"gocloud.dev/blob"
@@ -13,7 +14,6 @@ import (
 	"gotest.tools/v3/assert"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/activities"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/types"
 )
 
 // containerMDXMLParams holds the fields used by sipContainerMetadataXML.
@@ -108,8 +108,8 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "writes CSV with two SIPs",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
-				SIPs: []*types.SIP{
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
+				SIPs: []*childwf.PostbatchSIP{
 					{
 						UUID:      sipID1,
 						Name:      "Test SIP 1",
@@ -188,8 +188,8 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "writes CSV with only recordkeeping event when creation dates are zero",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
-				SIPs: []*types.SIP{
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
+				SIPs: []*childwf.PostbatchSIP{
 					{
 						UUID:      sipID1,
 						Name:      "Test SIP 1",
@@ -233,8 +233,8 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "writes CSV with empty event columns when both events are zero",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
-				SIPs: []*types.SIP{
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
+				SIPs: []*childwf.PostbatchSIP{
 					{
 						UUID:  sipID1,
 						Name:  "Test SIP 1",
@@ -277,7 +277,7 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "errors when no SIPs provided",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
 			},
 			wantErr: "create CSV: no SIPs provided",
 		},
@@ -285,8 +285,8 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "errors when SIP name is missing",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
-				SIPs: []*types.SIP{
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
+				SIPs: []*childwf.PostbatchSIP{
 					{AIPID: &aipID1},
 				},
 			},
@@ -296,8 +296,8 @@ func TestCreateCSV_Execute(t *testing.T) {
 			name:      "skips SIP when AIP ID is missing",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
-				Batch: &types.Batch{UUID: batchID},
-				SIPs: []*types.SIP{
+				Batch: &childwf.PostbatchBatch{UUID: batchID},
+				SIPs: []*childwf.PostbatchSIP{
 					{Name: "Test SIP 1"},
 				},
 			},

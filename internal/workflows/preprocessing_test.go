@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artefactual-sdps/enduro/pkg/childwf"
 	"github.com/artefactual-sdps/temporal-activities/bagcreate"
 	"github.com/artefactual-sdps/temporal-activities/bucketupload"
 	"github.com/google/uuid"
@@ -19,8 +20,6 @@ import (
 	_ "gocloud.dev/blob/memblob"
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/enums"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/tasks"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflows"
 )
 
@@ -130,7 +129,7 @@ func (s *PreprocessingTestSuite) TestBatchSuccess() {
 		&bagcreate.Result{}, nil,
 	).After(time.Second)
 
-	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
+	s.env.ExecuteWorkflow(s.workflow.Execute, &childwf.PreprocessingParams{
 		RelativePath: relativePath,
 		SIPID:        sipID,
 		BatchID:      batchID,
@@ -138,23 +137,23 @@ func (s *PreprocessingTestSuite) TestBatchSuccess() {
 
 	s.True(s.env.IsWorkflowCompleted())
 
-	var result workflows.PreprocessingResult
+	var result childwf.PreprocessingResult
 	s.NoError(s.env.GetWorkflowResult(&result))
 	s.Equal(
-		workflows.PreprocessingResult{
-			Outcome:      workflows.OutcomeSuccess,
+		childwf.PreprocessingResult{
+			Outcome:      childwf.OutcomeSuccess,
 			RelativePath: relativePath,
-			PreservationTasks: []*tasks.Task{
+			Tasks: []*childwf.Task{
 				{
 					Name:        "Upload ContainerMetadata.xml",
-					Outcome:     enums.TaskOutcomeSuccess,
+					Outcome:     childwf.TaskOutcomeSuccess,
 					Message:     "ContainerMetadata.xml file uploaded to the Enduro ingest bucket",
 					StartedAt:   s.startTime,
 					CompletedAt: s.startTime.Add(time.Second),
 				},
 				{
 					Name:        "Bag SIP",
-					Outcome:     enums.TaskOutcomeSuccess,
+					Outcome:     childwf.TaskOutcomeSuccess,
 					Message:     "SIP has been bagged",
 					StartedAt:   s.startTime.Add(time.Second),
 					CompletedAt: s.startTime.Add(2 * time.Second),
@@ -202,7 +201,7 @@ func (s *PreprocessingTestSuite) TestBatchContainerMDUploadError() {
 		&bucketupload.Result{}, fmt.Errorf("upload failed"),
 	).After(time.Second)
 
-	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
+	s.env.ExecuteWorkflow(s.workflow.Execute, &childwf.PreprocessingParams{
 		RelativePath: relativePath,
 		SIPID:        sipID,
 		BatchID:      batchID,
@@ -210,15 +209,15 @@ func (s *PreprocessingTestSuite) TestBatchContainerMDUploadError() {
 
 	s.True(s.env.IsWorkflowCompleted())
 
-	var result workflows.PreprocessingResult
+	var result childwf.PreprocessingResult
 	s.NoError(s.env.GetWorkflowResult(&result))
 	s.Equal(
-		workflows.PreprocessingResult{
-			Outcome: workflows.OutcomeSystemError,
-			PreservationTasks: []*tasks.Task{
+		childwf.PreprocessingResult{
+			Outcome: childwf.OutcomeSystemError,
+			Tasks: []*childwf.Task{
 				{
 					Name:        "Upload ContainerMetadata.xml",
-					Outcome:     enums.TaskOutcomeSystemFailure,
+					Outcome:     childwf.TaskOutcomeSystemFailure,
 					Message:     "System error: An error occurred when uploading the ContainerMetadata.xml file to the Enduro ingest bucket. Please try again, or ask a system administrator to investigate.",
 					StartedAt:   s.startTime,
 					CompletedAt: s.startTime.Add(time.Second),
@@ -259,23 +258,23 @@ func (s *PreprocessingTestSuite) TestNoBatchSuccess() {
 		&bagcreate.Result{}, nil,
 	).After(time.Second)
 
-	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PreprocessingRequest{
+	s.env.ExecuteWorkflow(s.workflow.Execute, &childwf.PreprocessingParams{
 		RelativePath: relativePath,
 		SIPID:        sipID,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 
-	var result workflows.PreprocessingResult
+	var result childwf.PreprocessingResult
 	s.NoError(s.env.GetWorkflowResult(&result))
 	s.Equal(
-		workflows.PreprocessingResult{
-			Outcome:      workflows.OutcomeSuccess,
+		childwf.PreprocessingResult{
+			Outcome:      childwf.OutcomeSuccess,
 			RelativePath: relativePath,
-			PreservationTasks: []*tasks.Task{
+			Tasks: []*childwf.Task{
 				{
 					Name:        "Bag SIP",
-					Outcome:     enums.TaskOutcomeSuccess,
+					Outcome:     childwf.TaskOutcomeSuccess,
 					Message:     "SIP has been bagged",
 					StartedAt:   s.startTime,
 					CompletedAt: s.startTime.Add(time.Second),

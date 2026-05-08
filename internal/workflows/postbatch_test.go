@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artefactual-sdps/enduro/pkg/childwf"
 	"github.com/artefactual-sdps/temporal-activities/bucketdelete"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/activities"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/config"
-	"github.com/artefactual-sdps/cva-enduro-workflows/internal/types"
 	"github.com/artefactual-sdps/cva-enduro-workflows/internal/workflows"
 )
 
@@ -64,11 +64,11 @@ func (s *PostbatchTestSuite) TearDownTest() {
 }
 
 func (s *PostbatchTestSuite) TestHappyPath() {
-	batch := &types.Batch{
+	batch := &childwf.PostbatchBatch{
 		UUID:      uuid.MustParse("8fdfaea1-06ed-4cf6-8bdf-d15d80420f35"),
 		SIPSCount: 1,
 	}
-	sip := &types.SIP{
+	sip := &childwf.PostbatchSIP{
 		UUID:  uuid.MustParse("22222222-3333-4444-5555-666666666666"),
 		Name:  "Test SIP",
 		AIPID: ref.New(uuid.MustParse("11111111-2222-3333-4444-555555555555")),
@@ -83,7 +83,7 @@ func (s *PostbatchTestSuite) TestHappyPath() {
 		mock.AnythingOfType("*context.timerCtx"),
 		&activities.CreateCSVParams{
 			Batch: batch,
-			SIPs:  []*types.SIP{sip},
+			SIPs:  []*childwf.PostbatchSIP{sip},
 		},
 	).Return(
 		&activities.CreateCSVResult{
@@ -100,15 +100,14 @@ func (s *PostbatchTestSuite) TestHappyPath() {
 		},
 	).Return(nil, nil)
 
-	s.env.ExecuteWorkflow(s.workflow.Execute, &workflows.PostbatchRequest{
+	s.env.ExecuteWorkflow(s.workflow.Execute, &childwf.PostbatchParams{
 		Batch: batch,
-		SIPs:  []*types.SIP{sip},
+		SIPs:  []*childwf.PostbatchSIP{sip},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 
-	var result workflows.PostbatchResult
+	var result childwf.PostbatchResult
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.Equal(workflows.OutcomeSuccess, result.Outcome)
-	s.Equal("batch_8fdfaea1-06ed-4cf6-8bdf-d15d80420f35.csv", result.RelativePath)
+	s.Equal(childwf.OutcomeSuccess, result.Outcome)
 }

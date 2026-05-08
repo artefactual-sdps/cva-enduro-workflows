@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artefactual-sdps/enduro/pkg/childwf"
 	"github.com/google/uuid"
 	"gocloud.dev/blob"
 
@@ -25,8 +26,8 @@ type (
 		bucket *blob.Bucket
 	}
 	CreateCSVParams struct {
-		Batch *types.Batch
-		SIPs  []*types.SIP
+		Batch *childwf.PostbatchBatch
+		SIPs  []*childwf.PostbatchSIP
 	}
 	CreateCSVResult struct {
 		Key string
