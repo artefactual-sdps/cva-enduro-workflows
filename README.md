@@ -124,10 +124,7 @@ GOARCH='amd64'
 ## Available activities
 
 The activities documented below belong to both the preprocessing child workflow
-(see
-[preprocessing.go](https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/preprocessing.go))
-and the post-storage child workflow (see
-[postbatch.go](https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/postbatch.go)).
+(see [preprocessing.go]) and the post-batch child workflow (see [postbatch.go]).
 
 ### Create AtoM CSV file
 
@@ -136,10 +133,12 @@ imported into AtoM to create an archival description for each of ingested SIPs.
 
 **Steps**
 
-- Create a batch CSV file in the internal ingest bucket, with a "reports/" prefix
+- Create a batch CSV file in the internal ingest bucket, with a "reports/"
+  prefix
 - Loop through the SIPs in the batch and for each one do the following:
   - Parse the required metadata from the SIPs ContainerMetadata.xml file
-  - Write a row to the CSV file for the SIP, in AtoM information object CSV import format
+  - Write a row to the CSV file for the SIP, in AtoM information object CSV
+    import format
 
 **Success criteria**
 
@@ -149,17 +148,17 @@ imported into AtoM to create an archival description for each of ingested SIPs.
 
 ### Other activities
 
-The preprocessing child workflow that invokes the activities listed above (see
-the preprocessing.go file) also uses a number of other more general Enduro
-temporal activites, including:
+The preprocessing child workflow (see the [preprocessing.go] file) also uses a
+number of other more general Enduro temporal activites, including:
 
-- `archiveextract`
 - `bagcreate`
-- `bagvalidate`
-- `ffvalidate`
+- `bucketdelete`
+- `bucketupload`
 - `xmlvalidate`
 
 [Enduro development manual]: https://enduro.readthedocs.io/dev-manual/devel/
 [go]: https://go.dev/doc/install
 [make]: https://www.gnu.org/software/make/
 [gcc]: https://gcc.gnu.org/
+[preprocessing.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/preprocessing.go)
+[postbatch.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/postbatch.go)
