@@ -230,6 +230,54 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"\n",
 		},
 		{
+			name:      "writes CSV with the batch identifier in the key",
+			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
+			params: &activities.CreateCSVParams{
+				Batch: &childwf.PostbatchBatch{
+					UUID:       batchID,
+					Identifier: "12345",
+				},
+				SIPs: []*childwf.PostbatchSIP{
+					{
+						UUID:      sipID1,
+						Name:      "Test SIP 1",
+						AIPID:     &aipID1,
+						FileCount: 8,
+					},
+				},
+			},
+			setup: func(t *testing.T, b *blob.Bucket) {
+				t.Helper()
+				seedContainerMetadataXML(t, b, sipID1, sipContainerMetadataXML(containerMDXMLParams{
+					consignment:       "900036",
+					recordNumber:      "01-5000-12/2009-01",
+					titleFreeTextPart: "Test Title 1",
+					homeLocation:      "Finance and Supply Chain Management (FSC)",
+				}))
+			},
+			expectedKey: "reports/batch_12345_33333333-3333-3333-3333-333333333333.csv",
+			want: strings.Join(columns, ",") + "\n" +
+				"1," +
+				"01-5000-12," +
+				"VanDocs transfer: 900036," +
+				"Recordkeeping," +
+				"NULL," +
+				"NULL," +
+				"NULL," +
+				"Finance and Supply Chain Management (FSC)," +
+				"F2009-01," +
+				"11111111-2222-3333-4444-555555555555|01-5000-12/2009-01," +
+				"AIP UUID|VanDocs container record number," +
+				"Test Title 1," +
+				"8 digital documents," +
+				"Multiple media," +
+				"File," +
+				"en," +
+				"draft," +
+				accessConditionsValue +
+				"\n",
+		},
+		{
 			name:      "writes CSV with empty event columns when both events are zero",
 			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
 			params: &activities.CreateCSVParams{
@@ -272,6 +320,16 @@ func TestCreateCSV_Execute(t *testing.T) {
 				"draft," +
 				accessConditionsValue +
 				"\n",
+		},
+		{
+			name:      "errors when no batch provided",
+			bucketCfg: &bucket.Config{URL: "file:///" + t.TempDir()},
+			params: &activities.CreateCSVParams{
+				SIPs: []*childwf.PostbatchSIP{
+					{Name: "Test SIP 1", AIPID: &aipID1},
+				},
+			},
+			wantErr: "create CSV: missing batch",
 		},
 		{
 			name:      "errors when no SIPs provided",

@@ -40,8 +40,8 @@ github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.54
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.54.0/go.mod h1:l9rva3ApbBpEJxSNYnwT9N4CDLrWgtq3u8736C5hyJw=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.54.0 h1:s0WlVbf9qpvkh1c/uDAPElam0WrL7fHRIidgZJ7UqZI=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.54.0/go.mod h1:Mf6O40IAyB9zR/1J8nGDDPirZQQPbYJni8Yisy7NTMc=
-github.com/artefactual-sdps/enduro v0.29.0 h1:0Eciws/lbDpRwITzVDDYBSiGKE5kX3BIz1lI030lDWY=
-github.com/artefactual-sdps/enduro v0.29.0/go.mod h1:im5aNrCN9eL4vsWAETfHzGS3BZ8dE3CysxaptbAadg4=
+github.com/artefactual-sdps/enduro v0.29.1-0.20260522161952-4f8fafb20d69 h1:6x6XX+PZIm7mvt68SOOY/0vY5BDN5BFjdDrygQSiAeQ=
+github.com/artefactual-sdps/enduro v0.29.1-0.20260522161952-4f8fafb20d69/go.mod h1:d/di5fiqzM3PJ+3xXtV6yslDwnxabbeNUMeoN4tfj1E=
 github.com/artefactual-sdps/temporal-activities v0.0.0-20260406175419-303edb7db3db h1:/oTyIMjn5Goo/+OK9LEA4iqpWXomSwxmhovO/+Z2MQw=
 github.com/artefactual-sdps/temporal-activities v0.0.0-20260406175419-303edb7db3db/go.mod h1:6GCIagAHHlLlfI5rr7gr/z2NiSFoIBj7WmVUHMecHO8=
 github.com/aws/aws-sdk-go-v2 v1.41.5 h1:dj5kopbwUsVUVFgO4Fi5BIT3t4WyqIDjGKCangnV/yY=
