@@ -3,7 +3,7 @@ module github.com/artefactual-sdps/cva-enduro-workflows
 go 1.26.3
 
 require (
-	github.com/artefactual-sdps/enduro v0.29.0
+	github.com/artefactual-sdps/enduro v0.29.1-0.20260522161952-4f8fafb20d69
 	github.com/artefactual-sdps/temporal-activities v0.0.0-20260406175419-303edb7db3db
 	github.com/go-logr/logr v1.4.3
 	github.com/google/uuid v1.6.0
