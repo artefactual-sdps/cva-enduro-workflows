@@ -121,7 +121,43 @@ GOARCH='amd64'
 ...
 ```
 
+## Available activities
+
+The activities documented below belong to both the preprocessing child workflow
+(see [preprocessing.go]) and the post-batch child workflow (see [postbatch.go]).
+
+### Create AtoM CSV file
+
+Creates a CSV metadata file for all the SIPs in a batch. The CSV file can be
+imported into AtoM to create an archival description for each of ingested SIPs.
+
+**Steps**
+
+- Create a batch CSV file in the internal ingest bucket, with a "reports/"
+  prefix
+- Loop through the SIPs in the batch and for each one do the following:
+  - Parse the required metadata from the SIPs ContainerMetadata.xml file
+  - Write a row to the CSV file for the SIP, in AtoM information object CSV
+    import format
+
+**Success criteria**
+
+- CSV file is successfully created with all required metadata
+- CSV file is stored in designated bucket
+- CSV file can be uploaded to AtoM without error
+
+### Other activities
+
+The preprocessing child workflow (see the [preprocessing.go] file) also uses a
+number of other more general Enduro temporal activites, including:
+
+- `bagcreate`
+- `bucketdelete`
+- `bucketupload`
+
 [Enduro development manual]: https://enduro.readthedocs.io/dev-manual/devel/
 [go]: https://go.dev/doc/install
 [make]: https://www.gnu.org/software/make/
 [gcc]: https://gcc.gnu.org/
+[preprocessing.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/preprocessing.go)
+[postbatch.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/postbatch.go)
