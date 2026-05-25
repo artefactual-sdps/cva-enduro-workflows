@@ -49,7 +49,13 @@ func (a *CreateCSV) Execute(ctx context.Context, params *CreateCSVParams) (*Crea
 		return nil, fmt.Errorf("create CSV: missing batch")
 	}
 
+	// If a batch identifier is not set, use the key "batch_<UUID>.csv".
 	key := fmt.Sprintf("reports/batch_%s.csv", params.Batch.UUID)
+
+	// If a batch identifier is set, use "batch_<identifier>_<UUID>.csv".
+	if params.Batch.Identifier != "" {
+		key = fmt.Sprintf("reports/batch_%s_%s.csv", params.Batch.Identifier, params.Batch.UUID)
+	}
 
 	bw, err := a.bucket.NewWriter(ctx, key, nil)
 	if err != nil {
