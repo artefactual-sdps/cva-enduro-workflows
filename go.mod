@@ -3,8 +3,8 @@ module github.com/artefactual-sdps/cva-enduro-workflows
 go 1.26.3
 
 require (
-	github.com/artefactual-sdps/enduro v0.29.1-0.20260522161952-4f8fafb20d69
-	github.com/artefactual-sdps/temporal-activities v0.0.0-20260406175419-303edb7db3db
+	github.com/artefactual-sdps/enduro v0.30.0
+	github.com/artefactual-sdps/temporal-activities v0.0.0-20260410210614-2a1273b0bd3a
 	github.com/go-logr/logr v1.4.3
 	github.com/google/uuid v1.6.0
 	github.com/spf13/pflag v1.0.10
@@ -87,7 +87,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
