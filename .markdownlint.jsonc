@@ -1,0 +1,15 @@
+{
+  "default": true,
+  "MD007": {
+    "indent": 4 // Use 4 spaces for unordered list indentation.
+  },
+  "MD010": {
+    "code_blocks": false // Allow hard tabs in code blocks.
+  },
+  "MD013": {
+    "code_blocks": false,  // Allow long lines in code blocks.
+    "tables": false        // Allow long lines in tables.
+  },
+  "MD024": false,  // Allow duplicate headings.
+  "MD046": false   // Allow code blocks without a specified language.
+}
