@@ -141,8 +141,8 @@ func Read(config *Config, configFile string) (found bool, configFileUsed string,
 	v.AddConfigPath(".")
 	v.AddConfigPath("$HOME/.config/")
 	v.AddConfigPath("/etc")
-	v.SetConfigName("cva-enduro")
-	v.SetEnvPrefix("CVA_ENDURO")
+	v.SetConfigName("cva-enduro-worker")
+	v.SetEnvPrefix("CVA_ENDURO_WORKER")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 

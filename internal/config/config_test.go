@@ -52,7 +52,7 @@ func TestConfig(t *testing.T) {
 	for _, tc := range []test{
 		{
 			name:       "Loads configuration from a TOML file",
-			configFile: "cva-enduro.toml",
+			configFile: "cva-enduro-worker.toml",
 			toml:       testConfig,
 			wantFound:  true,
 			wantCfg: config.Config{
@@ -86,7 +86,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			name:       "Errors when configuration values are not valid",
-			configFile: "cva-enduro.toml",
+			configFile: "cva-enduro-worker.toml",
 			toml: `# override default values to trigger validation errors
 [temporal]
 namespace = ""
@@ -102,7 +102,7 @@ Postbatch.WorkflowName: missing required value`,
 		},
 		{
 			name:       "Errors when MaxConcurrentSessions is less than 1",
-			configFile: "cva-enduro.toml",
+			configFile: "cva-enduro-worker.toml",
 			toml: `# Config
 [ingestBucket]
 url = "file:///home/enduro/reports"
@@ -126,7 +126,7 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 		},
 		{
 			name:       "Errors when TOML is invalid",
-			configFile: "cva-enduro.toml",
+			configFile: "cva-enduro-worker.toml",
 			toml:       "bad TOML",
 			wantFound:  true,
 			wantErr:    "failed to read configuration file: While parsing config: toml: expected character =",
@@ -134,7 +134,7 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 		{
 			name:            "Errors when no config file is found in the default paths",
 			wantFound:       false,
-			wantErrContains: "Config File \"cva-enduro.toml\" Not Found in \"[",
+			wantErrContains: "Config File \"cva-enduro-worker\" Not Found in \"[",
 		},
 		{
 			name:            "Errors when the given configFile is not found",
@@ -146,7 +146,7 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			tmpDir := fs.NewDir(t, "cva-enduro", fs.WithFile("cva-enduro.toml", tc.toml))
+			tmpDir := fs.NewDir(t, "cva-enduro-worker-test", fs.WithFile("cva-enduro-worker.toml", tc.toml))
 
 			configFile := ""
 			if tc.configFile != "" {
@@ -162,7 +162,7 @@ Worker.MaxConcurrentSessions: -1 is less than the minimum value (1)`,
 			}
 			if tc.wantErrContains != "" {
 				assert.Equal(t, found, tc.wantFound)
-				assert.ErrorContains(t, err, tc.wantErr)
+				assert.ErrorContains(t, err, tc.wantErrContains)
 				return
 			}
 
