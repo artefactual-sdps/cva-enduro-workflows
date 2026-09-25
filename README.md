@@ -8,6 +8,7 @@ workflows.
 - [Configuration](#configuration)
 - [Local environment](#local-environment)
 - [Makefile](#makefile)
+- [Available activities](#available-activities)
 
 ## Configuration
 
