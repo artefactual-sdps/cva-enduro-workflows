@@ -8,6 +8,7 @@ workflows.
 - [Configuration](#configuration)
 - [Local environment](#local-environment)
 - [Makefile](#makefile)
+- [Available activities](#available-activities)
 
 ## Configuration
 
@@ -126,25 +127,72 @@ GOARCH='amd64'
 The activities documented below belong to both the preprocessing child workflow
 (see [preprocessing.go]) and the post-batch child workflow (see [postbatch.go]).
 
-### Create AtoM CSV file
+### Preprocessing workflow
 
-Creates a CSV metadata file for all the SIPs in a batch. The CSV file can be
-imported into AtoM to create an archival description for each of ingested SIPs.
+The preprocessing workflow moves the ContainerMetadata.xml to the ingest bucket
+in preparation for the postbatch workflow and bags the SIP before sending it to
+Archivematica.
 
-**Steps**
+This workflow is registered as `preprocessing`.
 
-- Create a batch CSV file in the internal ingest bucket, with a "reports/"
-  prefix
-- Loop through the SIPs in the batch and for each one do the following:
-  - Parse the required metadata from the SIPs ContainerMetadata.xml file
-  - Write a row to the CSV file for the SIP, in AtoM information object CSV
-    import format
+1. Check for batch ID and upload ContainerMetadata.xml.
+   - Check for a batch ID. If there isn't one, skip this step, because a single
+     SIP doesn't get a batch CSV.
+   - Read `ContainerMetadata.xml`. This is the metadata export from VanDocs.
+   - Upload `ContainerMetadata.xml` to the Enduro ingest bucket as
+     `<SIP-UUID>_ContainerMetadata.xml`. The postbatch workflow reads it from
+     the ingest bucket.
+   - This shows up in the Enduro UI as the task "Upload ContainerMetadata.xml".
 
-**Success criteria**
+2. Bag the SIP.
+   - Run the `bagcreate` activity on the SIP directory, using sha512 checksums
+     by default. This turns the SIP into a BagIt bag.
+   - This shows up as the task "Bag SIP".
 
-- CSV file is successfully created with all required metadata
-- CSV file is stored in designated bucket
-- CSV file can be uploaded to AtoM without error
+### Postbatch workflow
+
+The postbatch workflow generates a AtoM-compliant CSV file that lists each SIP
+in the batch. When uploaded to AtoM, the CSV will result in one information
+object for each SIP. The postbatch workflow runs once per batch.
+
+This workflow is registered as `batch-csv`.
+
+1. Create the AtoM CSV - `create-csv-activity`, with a 10-minute timeout.
+   - Create a CSV file in the ingest bucket at `reports/batch_<UUID>.csv`. If
+     the batch has a custom identifier, the name is
+     `reports/batch_<identifier>_<UUID>. csv` instead.
+   - Create a header row in the CSV, using the standard AtoM RAD information
+     object CSV import format.
+   - The activity then adds information to the CSV for each SIP:
+     - If the SIP has no AIP ID, it gets skipped (this means that the
+       preservation workflow didn't produce an AIP.)
+     - If the SIP does have an AIP ID, the activity reads
+       `<SIP-UUID>_ContainerMetadata.xml` (created in the preprocessing
+       workflow) from the Enduro ingest bucket and parses the contents as
+       shown in the table below.
+     - This process is repeated for each SIP
+
+2. Clean up.
+   - For each SIP in the batch, delete `<SIP-UUID>_ContainerMetadata.xml` from
+     the ingest bucket using `bucketdelete`, with a 1-minute timeout per file. 
+
+#### Metadata mapping
+
+| CSV column | Source |
+|---|---|
+| `legacyId` | The SIP's position in the batch (1, 2, 3…) |
+| `qubitParentSlug` | `Classification`, with `PD-`, `VPD-` or `VPL-` in front if `OPR` starts with that code |
+| `acquisition` | "VanDocs transfer: " followed by `Consignment` |
+| `eventTypes` / `eventDates` / `eventStartDates` / `eventEndDates` / `eventActors` | Up to two events, separated by pipes. **Creation** runs from `DateRegistered` to `DateClosed`. **Recordkeeping** has `HomeLocation` as the actor. An empty value becomes `NULL`. |
+| `identifier` | "F" followed by the part of `RecordNumber` after the "/" (for example, `01-1000-30/0000007` becomes `F0000007`) |
+| `alternativeIdentifiers` / `alternativeIdentifierLabels` | The AIP UUID (labelled "AIP UUID") and, if present, `RecordNumber` (labelled "VanDocs container record number") |
+| `title` | `TitleFreeTextPart` |
+| `extentAndMedium` | "N digital documents", where N is Enduro's file count |
+| `radGeneralMaterialDesignation` | Always "Multiple media" |
+| `levelOfDescription` | Always "File" |
+| `culture` | Always "en" |
+| `publicationStatus` | Always "draft" |
+| `accessConditions` | Always: "This file has not been reviewed for potential FOIPPA restrictions. Access is pending review and may be delayed. See archivist for details." |
 
 ### Other activities
 
