@@ -133,8 +133,6 @@ The preprocessing workflow moves the ContainerMetadata.xml to the ingest bucket
 in preparation for the postbatch workflow and bags the SIP before sending it to
 Archivematica.
 
-This workflow is registered as `preprocessing`.
-
 1. Check for batch ID and upload ContainerMetadata.xml.
    - Check for a batch ID. If there isn't one, skip this step, because a single
      SIP doesn't get a batch CSV.
@@ -145,7 +143,7 @@ This workflow is registered as `preprocessing`.
    - This shows up in the Enduro UI as the task "Upload ContainerMetadata.xml".
 
 2. Bag the SIP.
-   - Run the `bagcreate` activity on the SIP directory, using sha512 checksums
+   - Run the [bagcreate] activity on the SIP directory, using sha512 checksums
      by default. This turns the SIP into a BagIt bag.
    - This shows up as the task "Bag SIP".
 
@@ -154,8 +152,6 @@ This workflow is registered as `preprocessing`.
 The postbatch workflow generates a AtoM-compliant CSV file that lists each SIP
 in the batch. When uploaded to AtoM, the CSV will result in one information
 object for each SIP. The postbatch workflow runs once per batch.
-
-This workflow is registered as `batch-csv`.
 
 1. Create the AtoM CSV - `create-csv-activity`, with a 10-minute timeout.
    - Create a CSV file in the ingest bucket at `reports/batch_<UUID>.csv`. If
@@ -170,11 +166,11 @@ This workflow is registered as `batch-csv`.
        `<SIP-UUID>_ContainerMetadata.xml` (created in the preprocessing
        workflow) from the Enduro ingest bucket and parses the contents as
        shown in the table below.
-     - This process is repeated for each SIP
+     - This process is repeated for each SIP.
 
 2. Clean up.
    - For each SIP in the batch, delete `<SIP-UUID>_ContainerMetadata.xml` from
-     the ingest bucket using `bucketdelete`, with a 1-minute timeout per file. 
+     the ingest bucket using [bucketdelete], with a 1-minute timeout per file.
 
 #### Metadata mapping
 
@@ -199,8 +195,8 @@ This workflow is registered as `batch-csv`.
 The preprocessing child workflow (see the [preprocessing.go] file) also uses a
 number of other more general Enduro temporal activites, including:
 
-- `bagcreate`
-- `bucketdelete`
+- [bagcreate]
+- [bucketdelete]
 - `bucketupload`
 
 [Enduro development manual]: https://enduro.readthedocs.io/dev-manual/devel/
@@ -209,3 +205,6 @@ number of other more general Enduro temporal activites, including:
 [gcc]: https://gcc.gnu.org/
 [preprocessing.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/preprocessing.go)
 [postbatch.go]: (https://github.com/artefactual-sdps/cva-enduro-workflows/blob/main/internal/workflows/postbatch.go)
+[bagcreate]:https://github.com/artefactual-sdps/temporal-activities/tree/main/bagcreate
+[bucketdelete]:https://github.com/artefactual-sdps/temporal-activities/tree/main/bucketdelete
+[bucketupload]:https://github.com/artefactual-sdps/temporal-activities/tree/main/bucketupload
