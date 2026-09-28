@@ -197,7 +197,7 @@ number of other more general Enduro temporal activites, including:
 
 - [bagcreate]
 - [bucketdelete]
-- `bucketupload`
+- [bucketupload]
 
 [Enduro development manual]: https://enduro.readthedocs.io/dev-manual/devel/
 [go]: https://go.dev/doc/install
