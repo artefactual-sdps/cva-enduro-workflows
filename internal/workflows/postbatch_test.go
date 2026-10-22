@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.artefactual.dev/tools/bucket"
-	"go.artefactual.dev/tools/ref"
 	temporalsdk_activity "go.temporal.io/sdk/activity"
 	temporalsdk_testsuite "go.temporal.io/sdk/testsuite"
 	"gocloud.dev/blob"
@@ -71,7 +70,7 @@ func (s *PostbatchTestSuite) TestHappyPath() {
 	sip := &childwf.PostbatchSIP{
 		UUID:  uuid.MustParse("22222222-3333-4444-5555-666666666666"),
 		Name:  "Test SIP",
-		AIPID: ref.New(uuid.MustParse("11111111-2222-3333-4444-555555555555")),
+		AIPID: new(uuid.MustParse("11111111-2222-3333-4444-555555555555")),
 	}
 
 	s.SetupWorkflowTest(config.Config{
