@@ -1,6 +1,6 @@
 module github.com/artefactual-sdps/cva-enduro-workflows
 
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/artefactual-sdps/enduro v0.30.0
