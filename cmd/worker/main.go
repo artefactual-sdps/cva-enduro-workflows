@@ -49,7 +49,7 @@ func main() {
 	)
 	defer log.Sync(logger)
 
-	keys := []interface{}{
+	keys := []any{
 		"version", version.Long,
 		"pid", os.Getpid(),
 		"go", runtime.Version(),
