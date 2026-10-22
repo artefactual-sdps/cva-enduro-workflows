@@ -49,7 +49,12 @@ formatters:
       no-inline-comments: true
       no-prefix-comments: false
     gofumpt:
-      extra-rules: true
+      # Groups function parameters with repeated types.
+      group-params: true
+      # Clothes naked returns in functions with named results.
+      clothe-returns: true
+      # Multi-line function calls with the opening parenthesis at the end of a line should place the closing parenthesis at the start of a line.
+      balance-calls: true
     golines:
       max-len: 120
       chain-split-dots: true
