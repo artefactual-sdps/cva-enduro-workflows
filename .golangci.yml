@@ -1,11 +1,14 @@
 version: "2"
 linters:
   enable:
+    - bodyclose
     - contextcheck
     - gosec
     - importas
     - intrange
     - misspell
+    - modernize
+    - revive
     - tparallel
     - unparam
   settings:
@@ -22,6 +25,10 @@ linters:
           alias: temporalapi_$1
       no-unaliased: true
       no-extra-aliases: false
+    revive:
+      enable-all-rules: false
+      rules:
+        - name: package-directory-mismatch
   exclusions:
     generated: lax
     paths:
@@ -49,10 +56,13 @@ formatters:
       no-inline-comments: true
       no-prefix-comments: false
     gofumpt:
-      extra-rules: true
+      extra:
+        balance-calls: true
+        clothe-returns: true
+        group-params: true
     golines:
-      max-len: 120
       chain-split-dots: true
+      max-len: 120
       reformat-tags: true
       shorten-comments: true
   exclusions:
